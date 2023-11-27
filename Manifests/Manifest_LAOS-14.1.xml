@@ -68,6 +68,22 @@
 	<!-- Switch to the Mulch WebView -->
 	<remove-project name="LineageOS/android_external_chromium-webview" />
 	<project path="external/chromium-webview" name="divested-mobile/mulch" groups="pdk" clone-depth="1" remote="gitlab" revision="master" />
+
+	<!-- use newer branches -->
+	<remove-project name="LineageOS/android_external_aac" />
+	<project path="external/aac" name="LineageOS/android_external_aac" remote="github" revision="lineage-17.1" />
+	<remove-project name="LineageOS/android_external_freetype" />
+	<project path="external/freetype" name="LineageOS/android_external_freetype" remote="github" revision="lineage-18.1" />
+	<remove-project name="platform/external/webp" />
+	<project path="external/webp" name="LineageOS/android_external_webp" remote="github" revision="lineage-18.1" />
+
+	<!-- @syphyr's security backport branches -->
+	<remove-project name="LineageOS/android_external_boringssl" />
+	<project path="external/boringssl" name="syphyr/android_external_boringssl" remote="github" revision="f8397314565d6441b52f5aa313d06a98a03c31cd" />
+	<remove-project name="LineageOS/android_external_ffmpeg" />
+	<project path="external/ffmpeg" name="syphyr/android_external_ffmpeg" remote="github" revision="db17b279a8b4e26c8f5087f266b467b3fdc3c146" />
+	<remove-project name="LineageOS/android_external_flac" />
+	<project path="external/flac" name="syphyr/android_external_flac" remote="github" revision="3c73deb884acf79764a769cac47a12d214929fa5" />
 <!-- END OF ADDITIONAL REPOS -->
 
 <!-- START OF DEVICE REPOS -->
@@ -78,6 +94,7 @@
 	<project path="hardware/sony/thermanager" name="LineageOS/android_hardware_sony_thermanager" remote="github" />
 	<project path="hardware/sony/timekeep" name="LineageOS/android_hardware_sony_timekeep" remote="github" />
 	<project path="external/stlport" name="LineageOS/android_external_stlport" remote="github" />
+	<project path="external/bson" name="LineageOS/android_external_bson" remote="github" />
 	<project path="packages/apps/FlipFlap" name="LineageOS/android_packages_apps_FlipFlap" remote="github" />
 	<project path="external/jhead" name="LineageOS/android_external_jhead" remote="github" />
 
@@ -107,9 +124,9 @@
 	<project path="device/lge/h815" name="LineageOS/android_device_lge_h815" remote="github" />
 	<project path="kernel/lge/msm8992" name="LineageOS/android_kernel_lge_msm8992" remote="github" />
 
-	<!-- Moto X Pure Edition (clark) -->
-	<project path="device/motorola/clark" name="LineageOS/android_device_motorola_clark" remote="github" />
-	<project path="kernel/motorola/msm8992" name="LineageOS/android_kernel_motorola_msm8992" remote="github" />
+	<!-- Moto G4/G4 Plus (athene) -->
+	<project path="device/motorola/athene" name="LineageOS/android_device_motorola_athene" remote="github" />
+	<project path="kernel/motorola/msm8952" name="LineageOS/android_kernel_motorola_msm8952" remote="github" />
 
 	<!-- Nexus 7 [2012] (grouper) -->
 	<project path="device/asus/grouper" name="LineageOS/android_device_asus_grouper" remote="github" revision="staging/cm-14.1" />
@@ -130,11 +147,11 @@
 
 	<!-- Samsung Galaxy Nexus (maguro/toro/toroplus) -->
 	<project path="prebuilts/gcc/linux-x86/arm/arm-eabi-4.7" name="platform/prebuilts/gcc/linux-x86/arm/arm-eabi-4.7" remote="aosp" revision="refs/tags/android-4.4.4_r2" />
-	<project path="device/samsung/maguro" name="Galaxy-Nexus/android_device_samsung_maguro" remote="github" />
+	<project path="device/samsung/maguro" name="Galaxy-Nexus/android_device_samsung_maguro" remote="github" revision="5fbd6c43e66edf954cc019f996157a88662ca39c" />
 	<project path="device/samsung/toro" name="LineageOS/android_device_samsung_toro" remote="github" revision="cm-13.0" />
 	<project path="device/samsung/toroplus" name="LineageOS/android_device_samsung_toroplus" remote="github" revision="cm-13.0" />
-	<project path="device/samsung/tuna" name="Galaxy-Nexus/android_device_samsung_tuna" remote="github" />
-	<project path="kernel/samsung/tuna" name="Galaxy-Nexus/android_kernel_samsung_tuna" remote="github" />
+	<project path="device/samsung/tuna" name="Galaxy-Nexus/android_device_samsung_tuna" remote="github" revision="fcd0a8e4d9704286c6c23a8a7e91b69fe98ec1ba" />
+	<project path="kernel/samsung/tuna" name="Galaxy-Nexus/android_kernel_samsung_tuna" remote="github" revision="b7e3152f477ff3dc97bf803fb6cc8bc437971cd9" />
 
 	<!-- Samsung Galaxy Note 8.0 Wi-Fi (n5100/n5110/n5120) -->
 	<project path="device/samsung/kona-common" name="LineageOS/android_device_samsung_kona-common" remote="github" />
@@ -182,13 +199,13 @@
 <!-- END OF DEVICE REPOS -->
 
         <!-- Proprietary Blobs -->
-	<project path="vendor/asus" name="[COLOUR IN THE LINES]/proprietary_vendor_asus" remote="github" />
-	<project path="vendor/google" name="[COLOUR IN THE LINES]/proprietary_vendor_google" remote="github" />
-	<project path="vendor/htc" name="[COLOUR IN THE LINES]/proprietary_vendor_htc" remote="github" />
-	<project path="vendor/lge" name="[COLOUR IN THE LINES]/proprietary_vendor_lge" remote="github" />
-	<project path="vendor/motorola" name="[COLOUR IN THE LINES]/proprietary_vendor_motorola" remote="github" />
-	<project path="vendor/samsung" name="[COLOUR IN THE LINES]/proprietary_vendor_samsung" remote="github" />
-	<project path="vendor/ti" name="[COLOUR IN THE LINES]/proprietary_vendor_ti" remote="github" revision="master" />
-	<project path="vendor/amazon" name="[COLOUR IN THE LINES]/proprietary_vendor_amazon" remote="github" />
+	<project path="vendor/asus" name="[COLOUR IN THE LINES]/proprietary_vendor_asus" remote="github" revision="6f411e32f16434fbf892806e81a96e19096419bc" />
+	<project path="vendor/google" name="[COLOUR IN THE LINES]/proprietary_vendor_google" remote="github" revision="3bb06d899b1da626be7da0eee442b121c9333fbd" />
+	<project path="vendor/htc" name="[COLOUR IN THE LINES]/proprietary_vendor_htc" remote="github" revision="2d427402bde8379e990c555abace4b14b7be2341" />
+	<project path="vendor/lge" name="[COLOUR IN THE LINES]/proprietary_vendor_lge" remote="github" revision="caee006f0b2ee9e1081b452f669f6b49bc7ec9a9" />
+	<project path="vendor/motorola" name="[COLOUR IN THE LINES]/proprietary_vendor_motorola" remote="github" revision="a4cfd5bd2147cba254e986d109063ec712070a99" />
+	<project path="vendor/samsung" name="[COLOUR IN THE LINES]/proprietary_vendor_samsung" remote="github" revision="a421a47fc343e0ee56a26fa5be996feb7b3f28a8" />
+	<project path="vendor/ti" name="[COLOUR IN THE LINES]/proprietary_vendor_ti" remote="github" revision="266127642e690ad7347230458368fb52b8c7dfd4" />
+	<project path="vendor/amazon" name="[COLOUR IN THE LINES]/proprietary_vendor_amazon" remote="github" revision="93ba59f4320d392a97bc22890d339f6693a1dfae" />
 
 </manifest>

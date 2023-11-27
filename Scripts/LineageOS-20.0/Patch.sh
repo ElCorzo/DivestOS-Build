@@ -66,7 +66,7 @@ applyPatch "$DOS_PATCHES/android_bionic/0002-Graphene_Bionic_Hardening-1.patch";
 #applyPatch "$DOS_PATCHES/android_bionic/0002-Graphene_Bionic_Hardening-2.patch"; #Replace brk and sbrk with stubs (GrapheneOS) #XXX: some vendor blobs use sbrk
 #applyPatch "$DOS_PATCHES/android_bionic/0002-Graphene_Bionic_Hardening-3.patch"; #Use blocking getrandom and avoid urandom fallback (GrapheneOS) #XXX: some kernels do not have (working) getrandom
 applyPatch "$DOS_PATCHES/android_bionic/0002-Graphene_Bionic_Hardening-4.patch"; #Fix undefined out-of-bounds accesses in sched.h (GrapheneOS)
-applyPatch "$DOS_PATCHES/android_bionic/0002-Graphene_Bionic_Hardening-5.patch"; #Stop implicitly marking mappings as mergeable (GrapheneOS)
+if [ "$DOS_USE_KSM" = false ]; then applyPatch "$DOS_PATCHES/android_bionic/0002-Graphene_Bionic_Hardening-5.patch"; fi; #Stop implicitly marking mappings as mergeable (GrapheneOS)
 applyPatch "$DOS_PATCHES/android_bionic/0002-Graphene_Bionic_Hardening-6.patch"; #Replace VLA formatting with dprintf-like function (GrapheneOS)
 applyPatch "$DOS_PATCHES/android_bionic/0002-Graphene_Bionic_Hardening-7.patch"; #Increase default pthread stack to 8MiB on 64-bit (GrapheneOS)
 applyPatch "$DOS_PATCHES/android_bionic/0002-Graphene_Bionic_Hardening-8.patch"; #Make __stack_chk_guard read-only at runtime (GrapheneOS)
@@ -120,6 +120,10 @@ applyPatch "$DOS_PATCHES/android_external_hardened_malloc/0001-Broken_Cameras-2.
 applyPatch "$DOS_PATCHES/android_external_hardened_malloc/0002-Broken_Displays.patch"; #Add workaround for OnePlus 8 & 9 display driver crash (DivestOS)
 sed -i 's/34359738368/2147483648/' Android.bp; #revert 48-bit address space requirement
 fi;
+fi;
+
+if enterAndClear "frameworks/av"; then
+git am $DOS_PATCHES/ASB-2023-10/av-*.patch;
 fi;
 
 if enterAndClear "frameworks/base"; then
@@ -182,7 +186,15 @@ applyPatch "$DOS_PATCHES/android_frameworks_base/0032-SUPL_Toggle.patch"; #Add a
 applyPatch "$DOS_PATCHES/android_frameworks_base/0033-Ugly_Orbot_Workaround.patch"; #Always add Briar and Tor Browser to Orbot's lockdown allowlist (CalyxOS)
 applyPatch "$DOS_PATCHES/android_frameworks_base/0034-Allow_Disabling_NTP.patch"; #Dont ping ntp server when nitz time update is toggled off (GrapheneOS)
 applyPatch "$DOS_PATCHES/android_frameworks_base/0035-System_JobScheduler_Allowance.patch"; #DeviceIdleJobsController: don't ignore whitelisted system apps (GrapheneOS)
-if [ "$DOS_MICROG_SUPPORT" = true ]; then applyPatch "$DOS_PATCHES/android_frameworks_base/0036-Hardened-signature-spoofing.patch"; fi; #Hardened signature spoofing ability (DivestOS)
+if [ "$DOS_MICROG_SUPPORT" = true ]; then
+applyPatch "$DOS_PATCHES/android_frameworks_base/0036-Unprivileged_microG_Handling.patch"; #Unprivileged microG handling (heavily based off of a CalyxOS patch)
+applyPatch "$DOS_PATCHES/android_frameworks_base/0037-filter-gms.patch"; #Filter select package queries for GMS (CalyxOS)
+fi;
+applyPatch "$DOS_PATCHES/android_frameworks_base/0038-no-camera-lpad.patch"; #Do not auto-grant Camera permission to the eUICC LPA UI app (GrapheneOS)
+applyPatch "$DOS_PATCHES/android_frameworks_base/0039-package_hooks.patch"; #Add hooks for modifying PackageManagerService behavior (GrapheneOS)
+applyPatch "$DOS_PATCHES/android_frameworks_base/0040-euicc-restrictions.patch"; #Integrate Google's EuiccSupportPixel package (GrapheneOS)
+applyPatch "$DOS_PATCHES/android_frameworks_base/0041-tile_restrictions.patch"; #SystemUI: Require unlocking to use sensitive QS tiles (GrapheneOS)
+applyPatch "$DOS_PATCHES/android_frameworks_base/0042-minimal_screenshot_exif.patch"; #Put bare minimum metadata in screenshots (CalyxOS)
 applyPatch "$DOS_PATCHES_COMMON/android_frameworks_base/0008-No_Crash_GSF.patch"; #Don't crash apps that depend on missing Gservices provider (GrapheneOS)
 hardenLocationConf services/core/java/com/android/server/location/gnss/gps_debug.conf; #Harden the default GPS config
 sed -i 's/DEFAULT_USE_COMPACTION = false;/DEFAULT_USE_COMPACTION = true;/' services/core/java/com/android/server/am/CachedAppOptimizer.java; #Enable app compaction by default (GrapheneOS)
@@ -224,6 +236,10 @@ if enterAndClear "hardware/qcom-caf/msm8953/audio"; then
 applyPatch "$DOS_PATCHES/android_hardware_qcom_audio/0001-Unused-8998.patch"; #audio_extn: Fix unused parameter warning in utils.c (codeworkx)
 fi;
 
+if enterAndClear "hardware/qcom-caf/msm8996/audio"; then
+applyPatch "$DOS_PATCHES/android_hardware_qcom_audio/0001-Unused-8996.patch"; #audio_extn: Fix unused parameter warning in utils.c (codeworkx)
+fi;
+
 if enterAndClear "hardware/qcom-caf/msm8998/audio"; then
 applyPatch "$DOS_PATCHES/android_hardware_qcom_audio/0001-Unused-8998.patch"; #audio_extn: Fix unused parameter warning in utils.c (codeworkx)
 fi;
@@ -263,17 +279,24 @@ fi;
 #cp $DOS_PATCHES_COMMON/android_packages_apps_CarrierConfig/*.xml assets/;
 #fi;
 
+if enterAndClear "packages/apps/CellBroadcastReceiver"; then
+applyPatch "$DOS_PATCHES/android_packages_apps_CellBroadcastReceiver/0001-presidential_alert_toggle.patch"; #Allow toggling presidential alertss (GrapheneOS)
+fi;
+
 if enterAndClear "packages/apps/Contacts"; then
 applyPatch "$DOS_PATCHES_COMMON/android_packages_apps_Contacts/0001-No_Google_Links.patch"; #Remove Privacy Policy and Terms of Service links (GrapheneOS)
 applyPatch "$DOS_PATCHES_COMMON/android_packages_apps_Contacts/0002-No_Google_Backup.patch"; #Backups are not sent to Google (GrapheneOS)
 applyPatch "$DOS_PATCHES_COMMON/android_packages_apps_Contacts/0003-Skip_Accounts.patch"; #Don't prompt to add account when creating a contact (CalyxOS)
 applyPatch "$DOS_PATCHES_COMMON/android_packages_apps_Contacts/0004-No_GMaps.patch"; #Use common intent for directions instead of Google Maps URL (GrapheneOS)
-applyPatch "$DOS_PATCHES_COMMON/android_packages_apps_Contacts/0005-vCard-Four.patch"; #Add basic support for vCard 4.0 (GrapheneOS)
 fi;
 
 if enterAndClear "packages/apps/Dialer"; then
-applyPatch "$DOS_PATCHES/android_packages_apps_Dialer/0001-Not_Private_Banner.patch"; #Add a privacy warning banner to calls (CalyxOS)
+#applyPatch "$DOS_PATCHES/android_packages_apps_Dialer/0001-Not_Private_Banner.patch"; #Add a privacy warning banner to calls (CalyxOS) TODO: REBASE
 sed -i 's/>true/>false/' java/com/android/incallui/res/values/lineage_config.xml; #XXX: temporary workaround for black screen on incoming calls https://gitlab.com/LineageOS/issues/android/-/issues/4632
+fi;
+
+if enterAndClear "packages/apps/ImsServiceEntitlement"; then
+applyPatch "$DOS_PATCHES/android_packages_apps_ImsServiceEntitlement/0001-delay-fcm.patch"; #Delay FCM registration until it's actually required (CalyxOS)
 fi;
 
 if enterAndClear "packages/apps/LineageParts"; then
@@ -282,8 +305,16 @@ applyPatch "$DOS_PATCHES/android_packages_apps_LineageParts/0001-Remove_Analytic
 cp -f "$DOS_PATCHES_COMMON/contributors.db" assets/contributors.db; #Update contributors cloud
 fi;
 
+if enterAndClear "packages/apps/Messaging"; then
+applyPatch "$DOS_PATCHES_COMMON/android_packages_apps_Messaging/0001-null-fix.patch"; #Handle null case (GrapheneOS)
+fi;
+
 if enterAndClear "packages/apps/Nfc"; then
 if [ "$DOS_GRAPHENE_CONSTIFY" = true ]; then applyPatch "$DOS_PATCHES/android_packages_apps_Nfc/0001-constify_JNINativeMethod.patch"; fi; #Constify JNINativeMethod tables (GrapheneOS)
+fi;
+
+if enterAndClear "packages/apps/OpenEUICC"; then
+applyPatch "$DOS_PATCHES/android_packages_apps_OpenEUICC/0001-hacky-fix.patch"; #Hacky fix for misidentifying physical SIM (DivestOS)
 fi;
 
 if enterAndClear "packages/apps/Settings"; then
@@ -301,7 +332,8 @@ applyPatch "$DOS_PATCHES/android_packages_apps_Settings/0013-Captive_Portal_Togg
 applyPatch "$DOS_PATCHES/android_packages_apps_Settings/0014-LTE_Only_Mode-1.patch"; #LTE Only Mode (GrapheneOS)
 applyPatch "$DOS_PATCHES/android_packages_apps_Settings/0014-LTE_Only_Mode-2.patch"; #Fix LTE Only mode on World Mode (GrapheneOS)
 applyPatch "$DOS_PATCHES/android_packages_apps_Settings/0015-SUPL_Toggle.patch"; #Add a toggle for forcibly disabling SUPL (GrapheneOS)
-if [ "$DOS_MICROG_SUPPORT" = true ]; then applyPatch "$DOS_PATCHES/android_packages_apps_Settings/0016-signature_spoofing_toggle.patch"; fi; #Add a toggle to opt-in to restricted signature spoofing (heavily based off of a GrapheneOS patch)
+if [ "$DOS_MICROG_SUPPORT" = true ]; then applyPatch "$DOS_PATCHES/android_packages_apps_Settings/0016-microG_Toggle.patch"; fi; #Add a toggle for microG enablement (heavily based off of a GrapheneOS patch)
+if [ "$DOS_DEBLOBBER_REMOVE_EUICC_FULL" = false ]; then applyPatch "$DOS_PATCHES/android_packages_apps_Settings/0017-OpenEUICC_Toggle.patch"; fi; #Add a toggle for OpenEUICC enablement (heavily based off of a GrapheneOS patch)
 applyPatch "$DOS_PATCHES_COMMON/android_packages_apps_Settings/0001-disable_apps.patch"; #Add an ability to disable non-system apps from the "App info" screen (GrapheneOS)
 fi;
 
@@ -314,6 +346,7 @@ git revert --no-edit fcf658d2005dc557a95d5a7fb89cb90d06b31d33; #grant permission
 fi;
 
 if enterAndClear "packages/apps/Trebuchet"; then
+git am $DOS_PATCHES/ASB-2023-10/launcher-*.patch;
 cp $DOS_BUILD_BASE/vendor/divested/overlay/common/packages/apps/Trebuchet/res/xml/default_workspace_*.xml res/xml/; #XXX: Likely no longer needed
 fi;
 
@@ -325,8 +358,8 @@ sed -i 's/PROP_BUILD_VERSION_INCREMENTAL);/PROP_BUILD_VERSION_INCREMENTAL).repla
 fi;
 
 if enterAndClear "packages/inputmethods/LatinIME"; then
-applyPatch "$DOS_PATCHES_COMMON/android_packages_inputmethods_LatinIME/0001-Voice.patch"; #Remove voice input key (DivestOS)
-applyPatch "$DOS_PATCHES_COMMON/android_packages_inputmethods_LatinIME/0002-Disable_Personalization.patch"; #Disable personalization dictionary by default (GrapheneOS)
+applyPatch "$DOS_PATCHES/android_packages_inputmethods_LatinIME/0001-Voice.patch"; #Remove voice input key (DivestOS)
+applyPatch "$DOS_PATCHES/android_packages_inputmethods_LatinIME/0002-Disable_Personalization.patch"; #Disable personalization dictionary by default (GrapheneOS)
 fi;
 
 if enterAndClear "packages/modules/Connectivity"; then
@@ -339,6 +372,7 @@ if enterAndClear "packages/modules/DnsResolver"; then
 applyPatch "$DOS_PATCHES/android_packages_modules_DnsResolver/0001-Hosts_Cache.patch"; #DnsResolver: Sort and cache hosts file data for fast lookup (tdm)
 applyPatch "$DOS_PATCHES/android_packages_modules_DnsResolver/0001-Hosts_Wildcards.patch"; #DnsResolver: Support wildcards in cached hosts file (tdm)
 applyPatch "$DOS_PATCHES/android_packages_modules_DnsResolver/0002-hosts_toggle.patch"; #Add a toggle to disable /etc/hosts lookup (DivestOS)
+applyPatch "$DOS_PATCHES/android_packages_modules_DnsResolver/0003-Reuse-align_ptr-in-hosts_cache.patch"; #Reuse align_ptr in hosts_cache (danielk43)
 #applyPatch "$DOS_PATCHES/android_packages_modules_DnsResolver/0004-More-DoH.patch"; #Add more DoH endpoints (DivestOS)
 fi;
 
@@ -388,6 +422,14 @@ if enterAndClear "system/sepolicy"; then
 applyPatch "$DOS_PATCHES/android_system_sepolicy/0002-protected_files.patch"; #Label protected_{fifos,regular} as proc_security (GrapheneOS)
 applyPatch "$DOS_PATCHES/android_system_sepolicy/0003-ptrace_scope-1.patch"; #Allow init to control kernel.yama.ptrace_scope (GrapheneOS)
 applyPatch "$DOS_PATCHES/android_system_sepolicy/0003-ptrace_scope-2.patch"; #Allow system to use persist.native_debug (GrapheneOS)
+git am "$DOS_PATCHES/android_system_sepolicy/0001-LGE_Fixes-New.patch"; #Fix -user builds for LGE devices (DivestOS)
+patch -p1 < "$DOS_PATCHES/android_system_sepolicy/0001-LGE_Fixes-New.patch" --directory="prebuilts/api/33.0";
+patch -p1 < "$DOS_PATCHES/android_system_sepolicy/0001-LGE_Fixes.patch" --directory="prebuilts/api/32.0";
+patch -p1 < "$DOS_PATCHES/android_system_sepolicy/0001-LGE_Fixes.patch" --directory="prebuilts/api/31.0";
+patch -p1 < "$DOS_PATCHES/android_system_sepolicy/0001-LGE_Fixes.patch" --directory="prebuilts/api/30.0";
+patch -p1 < "$DOS_PATCHES/android_system_sepolicy/0001-LGE_Fixes.patch" --directory="prebuilts/api/29.0";
+patch -p1 < "$DOS_PATCHES/android_system_sepolicy/0001-LGE_Fixes.patch" --directory="prebuilts/api/28.0";
+awk -i inplace '!/true cannot be used in user builds/' Android.mk; #Allow ignoring neverallows under -user
 awk -i inplace '!/domain=gmscore_app/' private/seapp_contexts prebuilts/api/*/private/seapp_contexts; #Disable unused gmscore_app domain (GrapheneOS)
 fi;
 
@@ -404,7 +446,7 @@ if [ "$DOS_HOSTS_BLOCKING" = true ]; then awk -i inplace '!/50-lineage.sh/' conf
 awk -i inplace '!/PRODUCT_EXTRA_RECOVERY_KEYS/' config/*.mk; #Remove Lineage extra keys
 awk -i inplace '!/security\/lineage/' config/*.mk; #Remove Lineage extra keys
 awk -i inplace '!/config_multiuserMaximumUsers/' overlay/common/frameworks/base/core/res/res/values/config.xml; #Conflict
-sed -i '/config_locationExtraPackageNames/,+9d' overlay/common/frameworks/base/core/res/res/values/config.xml; #Conflict
+sed -i '/config_locationExtraPackageNames/,+11d' overlay/common/frameworks/base/core/res/res/values/config.xml; #Conflict
 awk -i inplace '!/def_backup_transport/' overlay/common/frameworks/base/packages/SettingsProvider/res/values/defaults.xml; #Unset default backup provider
 if [ "$DOS_DEBLOBBER_REMOVE_AUDIOFX" = true ]; then sed -i '/TARGET_EXCLUDES_AUDIOFX/,+3d' config/common_full.mk; fi; #Remove AudioFX
 sed -i 's/LINEAGE_BUILDTYPE := UNOFFICIAL/LINEAGE_BUILDTYPE := dos/' config/*.mk; #Change buildtype
@@ -413,11 +455,14 @@ echo 'include vendor/divested/divestos.mk' >> config/common.mk; #Include our cus
 awk -i inplace '!/Eleven/' config/common_full.mk; #Remove Music Player
 awk -i inplace '!/enforce-product-packages-exist-internal/' config/common.mk; #Ignore missing packages
 cp -f "$DOS_PATCHES_COMMON/config_webview_packages.xml" overlay/common/frameworks/base/core/res/res/xml/config_webview_packages.xml; #Change allowed WebView providers
+awk -i inplace '!/com.android.vending/' overlay/common/frameworks/base/core/res/res/values/vendor_required_apps*.xml; #Remove unwanted apps
+awk -i inplace '!/com.google.android/' overlay/common/frameworks/base/core/res/res/values/vendor_required_apps*.xml;
 fi;
 
 if enter "vendor/divested"; then
 awk -i inplace '!/_lookup/' overlay/common/lineage-sdk/packages/LineageSettingsProvider/res/values/defaults.xml; #Remove all lookup provider overrides
 echo "PRODUCT_PACKAGES += eSpeakNG" >> packages.mk; #PicoTTS needs work to compile on 18.1, use eSpeak-NG instead
+if [ "$DOS_DEBLOBBER_REMOVE_EUICC_FULL" = false ]; then echo "PRODUCT_PACKAGES += OpenEUICC" >> packages.mk; fi;
 sed -i 's/OpenCamera/Aperture/' packages.mk; #Use the LineageOS camera app
 awk -i inplace '!/speed-profile/' build/target/product/lowram.mk; #breaks compile on some dexpreopt devices
 sed -i 's/wifi,cell/internet/' overlay/common/frameworks/base/packages/SystemUI/res/values/config.xml; #Use the modern quick tile
@@ -432,6 +477,10 @@ fi;
 #
 if enterAndClear "device/essential/mata"; then
 echo "allow permissioncontroller_app tethering_service:service_manager find;" > sepolicy/private/permissioncontroller_app.te;
+fi;
+
+if enterAndClear "device/fxtec/pro1"; then
+echo "type qti_debugfs, fs_type, debugfs_type;" >> sepolicy/vendor/file.te; #fixup
 fi;
 
 if enterAndClear "device/google/gs101"; then
@@ -461,10 +510,17 @@ if enterAndClear "kernel/google/wahoo"; then
 sed -i 's/asm(SET_PSTATE_UAO(1));/asm(SET_PSTATE_UAO(1)); return 0;/' arch/arm64/mm/fault.c; #fix build with CONFIG_ARM64_UAO
 fi;
 
+if enterAndClear "device/lge/msm8996-common"; then
+sed -i '3itypeattribute hwaddrs misc_block_device_exception;' sepolicy/hwaddrs.te;
+echo "allow hwaddrs block_device:lnk_file { open };" >> sepolicy/hwaddrs.te;
+echo "type sensors_data_file, file_type, data_file_type, core_data_file_type;" >> sepolicy/file.te; #only included in -userdebug
+fi;
+
 if enterAndClear "device/oneplus/msm8998-common"; then
 #awk -i inplace '!/TARGET_RELEASETOOLS_EXTENSIONS/' BoardConfigCommon.mk; #disable releasetools to fix delta ota generation
 sed -i '/PRODUCT_SYSTEM_VERITY_PARTITION/iPRODUCT_VENDOR_VERITY_PARTITION := /dev/block/bootdevice/by-name/vendor' common.mk; #Support verity on /vendor too
 awk -i inplace '!/vendor_sensors_dbg_prop/' sepolicy/vendor/hal_camera_default.te; #fixup
+echo "type qti_debugfs, fs_type, debugfs_type;" >> sepolicy/vendor/file.te; #fixup
 fi;
 
 if enterAndClear "device/xiaomi/mithorium-common"; then
@@ -503,6 +559,7 @@ find "device" -maxdepth 2 -mindepth 2 -type d -print0 | xargs -0 -n 1 -P 8 -I {}
 find "kernel" -maxdepth 2 -mindepth 2 -type d -print0 | xargs -0 -n 1 -P 4 -I {} bash -c 'hardenDefconfig "{}"';
 find "kernel" -maxdepth 2 -mindepth 2 -type d -print0 | xargs -0 -n 1 -P 8 -I {} bash -c 'updateRegDb "{}"';
 find "device" -maxdepth 2 -mindepth 2 -type d -print0 | xargs -0 -n 1 -P 8 -I {} bash -c 'disableAPEX "{}"';
+#if [ "$DOS_DEBLOBBER_REMOVE_EUICC_FULL" = false ]; then find "device" -maxdepth 2 -mindepth 2 -type d -print0 | xargs -0 -n 1 -P 8 -I {} bash -c 'includeOE "{}"'; fi;
 if [ "$DOS_GRAPHENE_EXEC" = true ]; then find "device" -maxdepth 2 -mindepth 2 -type d -print0 | xargs -0 -n 1 -P 8 -I {} bash -c 'disableEnforceRRO "{}"'; fi;
 cd "$DOS_BUILD_BASE";
 deblobAudio;
@@ -515,23 +572,42 @@ removeUntrustedCerts || true;
 cd "$DOS_BUILD_BASE";
 #rm -rfv device/*/*/overlay/CarrierConfigResCommon device/*/*/rro_overlays/CarrierConfigOverlay device/*/*/overlay/packages/apps/CarrierConfig/res/xml/vendor.xml;
 
+#Tweaks for 3GB RAM devices
+enableLowRam "device/sony/kirin" "kirin";
+enableLowRam "device/sony/pioneer" "pioneer";
 #Tweaks for <4GB RAM devices
 enableLowRam "device/xiaomi/Mi8937" "Mi8917";
 enableLowRam "device/xiaomi/Mi8937" "Mi8937";
+#Tweaks for 3GB/4GB RAM devices
+#enableLowRam "device/zuk/z2_plus" "z2_plus";
 #Tweaks for 4GB RAM devices
-enableLowRam "device/essential/mata" "mata";
-enableLowRam "device/fairphone/FP3" "FP3";
-enableLowRam "device/google/bonito" "bonito";
-enableLowRam "device/google/bonito" "sargo";
-enableLowRam "device/google/crosshatch" "blueline";
-enableLowRam "device/google/crosshatch" "crosshatch";
-enableLowRam "device/google/muskie/walleye" "walleye";
-enableLowRam "device/google/taimen" "taimen";
-enableLowRam "device/samsung/starlte" "starlte";
+#enableLowRam "device/essential/mata" "mata";
+#enableLowRam "device/fairphone/FP3" "FP3";
+#enableLowRam "device/google/bonito" "bonito";
+#enableLowRam "device/google/bonito" "sargo";
+#enableLowRam "device/google/crosshatch" "blueline";
+#enableLowRam "device/google/crosshatch" "crosshatch";
+#enableLowRam "device/google/muskie/walleye" "walleye";
+#enableLowRam "device/google/taimen" "taimen";
+#enableLowRam "device/lge/h830" "h830";
+#enableLowRam "device/lge/h850" "h850";
+#enableLowRam "device/lge/h870" "h870";
+#enableLowRam "device/lge/h910" "h910";
+#enableLowRam "device/lge/h918" "h918";
+#enableLowRam "device/lge/h990" "h990";
+#enableLowRam "device/lge/ls997" "ls997";
+#enableLowRam "device/lge/rs988" "rs988";
+#enableLowRam "device/lge/us996" "us996";
+#enableLowRam "device/lge/us997" "us997";
+#enableLowRam "device/lge/vs995" "vs995";
+#enableLowRam "device/samsung/starlte" "starlte";
+#enableLowRam "device/sony/discovery" "discovery";
 #Tweaks for 4GB/6GB RAM devices
 #enableLowRam "device/sony/akari" "akari";
 #enableLowRam "device/sony/akatsuki" "akatsuki";
 #enableLowRam "device/sony/xz2c" "xz2c";
+#enableLowRam "device/sony/voyager" "voyager";
+#enableLowRam "device/sony/mermaid" "mermaid";
 
 #Fix broken options enabled by hardenDefconfig()
 [[ -d kernel/fairphone/sdm632 ]] && sed -i "s/CONFIG_PREEMPT_TRACER=n/CONFIG_PREEMPT_TRACER=y/" kernel/fairphone/sdm632/arch/arm64/configs/lineageos_*_defconfig; #Breaks on compile
@@ -543,7 +619,9 @@ enableLowRam "device/samsung/starlte" "starlte";
 [[ -d kernel/oneplus/sm8250 ]] && echo -e "\nCONFIG_DEBUG_FS=n" >> kernel/oneplus/sm8250/arch/arm64/configs/vendor/kona-perf_defconfig; #vintf failure
 [[ -d kernel/samsung/exynos9810 ]] && sed -i "s/CONFIG_RANDOMIZE_BASE=y/# CONFIG_RANDOMIZE_BASE is not set/" kernel/samsung/exynos9810/arch/arm64/configs/*_defconfig; #Breaks on compile
 [[ -d kernel/xiaomi/msm8937 ]] && sed -i "s/CONFIG_MITIGATE_SPECTRE_BRANCH_HISTORY=y/# CONFIG_MITIGATE_SPECTRE_BRANCH_HISTORY is not set/" kernel/xiaomi/msm8937/arch/arm64/configs/*_defconfig; #Breaks on compile
+[[ -d kernel/xiaomi/vayu ]] && echo -e "\nCONFIG_DEBUG_FS=y" >> kernel/xiaomi/vayu/arch/arm64/configs/vendor/sm8150-perf_defconfig; #compile failure
 
+if [ "$DOS_DEBLOBBER_REMOVE_EUICC_FULL" = false ]; then sed -i '/<privapp-permissions/a\ \ \ \ \ \ \ \ <deny-permission name="android.permission.INTERNET" \/>' vendor/*/*/proprietary/*/etc/permissions/com.google.euiccpixel.xml; fi; #Remove network permission
 sed -i 's/^YYLTYPE yylloc;/extern YYLTYPE yylloc;/' kernel/*/*/scripts/dtc/dtc-lexer.l* || true; #Fix builds with GCC 10
 rm -v kernel/*/*/drivers/staging/greybus/tools/Android.mk || true;
 rm -v kernel/*/*/*/*/drivers/staging/greybus/tools/Android.mk || true;
@@ -553,6 +631,10 @@ awk -i inplace '!/BOARD_AVB_ENABLE := false/' device/*/*/*.mk; #revert Lineage's
 #Remove broken? charge control feature
 awk -i inplace '!/hardware\/google\/pixel\/lineage_health\/device/' device/*/*/*.mk;
 awk -i inplace '!/vendor.lineage.health-service.default/' device/*/*/*.mk;
+
+#Don't trip rollback protection after October update
+sed -i 's/2023-09-05/2023-10-01/' device/google/redbull/device-common.mk device/google/sunfish/device-common.mk device/google/gs201/device.mk device/google/gs101/device.mk;
+
 #
 #END OF DEVICE CHANGES
 #

@@ -49,7 +49,7 @@ echo "Deblobbing...";
 	blobs=$blobs"ifaadaemon|ifaadaemonProxy";
 	blobs=$blobs"|IFAAService.apk";
 	blobs=$blobs"|vendor.oneplus.hardware.ifaa.*";
-	makes=$makes"org.ifaa.android.manager";
+	makes=$makes"org.ifaa.android.manager|IFAAService";
 	manifests=$manifests"hardware.ifaa";
 
 	#Alipay (Payment Platform) [Alibaba]
@@ -75,6 +75,7 @@ echo "Deblobbing...";
 	if [ "$DOS_DEBLOBBER_REMOVE_APTX" = true ]; then
 		blobs=$blobs"|.*aptX.*|libbt-aptx.*.so";
 		blobs=$blobs"|aptxui.apk";
+		#makes=$makes"|aptxui";
 	fi;
 
 	#AT Command Handling/Forwarding (See: https://atcommands.org)
@@ -84,6 +85,7 @@ echo "Deblobbing...";
 		blobs=$blobs"|ATFWD-daemon|atfwd_daemon";
 		blobs=$blobs"|vendor.qti.atcmdfwd.*|vendor.qti.hardware.radio.atcmdfwd.*";
 		blobs=$blobs"|atfwd.apk";
+		#makes=$makes"|atfwd";
 		sepolicy=$sepolicy" atfwd.te";
 		manifests=$manifests"|AtCmdFwd";
 	fi;
@@ -122,7 +124,7 @@ echo "Deblobbing...";
 		manifests=$manifests"|com.quicinc.cne|iwlan";
 		blobs=$blobs"|QualifiedNetworksService.apk"; #Google
 		blobs=$blobs"|qualifiednetworksservice.xml";
-		makes=$makes"|Iwlan";
+		makes=$makes"|Iwlan|CNEService|CneApp|IWlanService";
 	fi;
 
 	#CPPF (DRM) [?]
@@ -175,11 +177,10 @@ echo "Deblobbing...";
 		sepolicy=$sepolicy" dpmd.te";
 		ipcSec=$ipcSec"|47:4294967295:1001:3004|48:4294967295:1000:3004";
 		manifests=$manifests"|dpmQmiService";
+		makes=$makes"|dpmserviceapp";
 	fi;
 
 	#DRM
-	blobs=$blobs"|lib-sec-disp.so|libSecureUILib.so|libsecureui.so|libsecureuisvc_jni.so|libsecureui_svcsock.so"; #Qualcomm
-	blobs=$blobs"|com.qualcomm.qti.services.secureui.*";
 	blobs=$blobs"|liboemcrypto.so|libtzdrmgenprov.so";
 	blobs=$blobs"|libpvr.so|librmp.so|libsi.so|libSSEPKCS11.so";
 	blobs=$blobs"|libdrmctaplugin.so|libdrmmtkplugin.so|libdrmmtkwhitelist.so|libmockdrmcryptoplugin.so";
@@ -206,6 +207,7 @@ echo "Deblobbing...";
 	blobs=$blobs"|embms.xml";
 	blobs=$blobs"|embmslibrary.jar";
 	manifests=$manifests"|embms";
+	#makes=$makes"|embms";
 
 	#External Accessories
 	if [ "$DOS_DEBLOBBER_REMOVE_ACCESSORIES" = true ]; then
@@ -226,7 +228,13 @@ echo "Deblobbing...";
 	fi;
 
 	#Face Unlock [Google]
-	blobs=$blobs"|libfacenet.so|libfilterpack_facedetect.so|libfrsdk.so";
+	blobs=$blobs"|libfacenet.so|libfilterpack_facedetect.so|libfrsdk.so"; #legacy
+	if [ "$DOS_DEBLOBBER_REMOVE_FACE" = true ]; then #modern
+		blobs=$blobs"|android.hardware.biometrics.face.*"; #depends on airbrush
+		blobs=$blobs"|manifest_face.xml";
+		#blobs=$blobs"|firmware/faceauth";
+		makes=$makes"|android.hardware.biometrics.face.*";
+	fi;
 
 	#GPS [Qualcomm]
 	#blobs=$blobs"|gpsd";
@@ -282,18 +290,23 @@ echo "Deblobbing...";
 
 	#eUICC (Virtual SIM) [Google]
 	if [ "$DOS_DEBLOBBER_REMOVE_IMS" = true ] || [ "$DOS_DEBLOBBER_REMOVE_EUICC" = true ]; then
-		blobs=$blobs"|EuiccGoogle.apk|EuiccSupportPixel.apk|EuiccSupportPixelPermissions.apk|EuiccGoogleOverlay.apk"; #EUICC is useless without GMS
-		blobs=$blobs"|esim0.img|esim-v1.img|esim-full-v0.img|esim-a1.img|esim-a2.img";
-		blobs=$blobs"|com.google.euiccpixel.xml|com.google.euiccpixel.permissions.xml";
-		makes=$makes"|android.hardware.telephony.euicc.*|GoogleParts";
+		blobs=$blobs"|EuiccGoogle.apk|EuiccGoogleOverlay.apk"; #Google LPAD
+		makes=$makes"|GoogleParts"; #Disables apps if GMS is not available
 		#overlay=$overlay"|config_telephonyEuiccDeviceCapabilities"; #TODO handle multiple lines
+		if [ "$DOS_DEBLOBBER_REMOVE_EUICC_FULL" = true ]; then
+			blobs=$blobs"|EuiccSupportPixel.apk|EuiccSupportPixelPermissions.apk"; #Hardware support
+			blobs=$blobs"|esim0.img|esim-v1.img|esim-full-v0.img|esim-a1.img|esim-a2.img"; #Firmware
+			blobs=$blobs"|com.google.euiccpixel.xml|com.google.euiccpixel.permissions.xml"; #Permissions
+			makes=$makes"|android.hardware.telephony.euicc.*"; #Manifests
+		fi;
 	fi;
 
-	#Google Camera
+	#Google Camera (app)
+	#blobs=$blobs"|com.google.android.camera.experimental.*";
+
+	#Google Camera (system) Extensions
 	blobs=$blobs"|PixelCameraServices.*.apk";
-	if [ "$DOS_DEBLOBBER_REMOVE_CAMEXT" = true ]; then
-		blobs=$blobs"|com.google.android.camera.*";
-	fi;
+	blobs=$blobs"|com.google.android.camera.extensions.*";
 
 	#Google NFC
 	blobs=$blobs"|PixelNfc.apk";
@@ -430,8 +443,12 @@ echo "Deblobbing...";
 	blobs=$blobs"|cacert_location.pem|com.qti.location.sdk.xml|com.qualcomm.location.xml|izat.conf|izat.xt.srv.xml|lowi.conf|xtra_root_cert.pem|xtwifi.conf";
 	blobs=$blobs"|com.qti.location.sdk.jar|izat.xt.srv.jar";
 	blobs=$blobs"|com.qualcomm.location.apk|com.qualcomm.services.location.apk|xtra_t_app.apk|CACertService.apk";
-	blobs=$blobs"|gpsone_daemon|izat.xt.srv|location-mq|loc_launcher|lowi-server|slim_ap_daemon|slim_daemon|xtwifi-client|xtwifi-inet-agent|xtra-daemon";
+	blobs=$blobs"|gpsone_daemon|izat.xt.srv|location-mq|loc_launcher|lowi-server|slim_ap_daemon|slim_daemon|xtwifi-client|xtwifi-inet-agent|xtra-daemon|garden_app";
 	overlay=$overlay"|config_comboNetworkLocationProvider|config_enableFusedLocationOverlay|config_enableNetworkLocationOverlay|config_fusedLocationProviderPackageName|config_enableNetworkLocationOverlay|config_networkLocationProviderPackageName|com.qualcomm.location";
+
+	#Machine Learning [Google]
+	#blobs=$blobs"|libdarwinn_client.so|libdarwinn_compiler.so|libdarwinn_hal.so"; #breaks camera
+	#blobs=$blobs"|vendor.google.darwinn.service.*";
 
 	#Machine Learning [Qualcomm]
 	#blobs=$blobs"|vendor.qti.hardware.mlshal.*|vendor.qti.hardware.cvp.*";
@@ -442,10 +459,9 @@ echo "Deblobbing...";
 
 	#Motion Sense
 	blobs=$blobs"|OsloFeedback.apk";
-	blobs=$blobs"|oslo.so|oslo.napp_header";
-	blobs=$blobs"|BufferConfigValOslo.bin|OsloSensorConfig.bin|OsloSensorPackage.bin";
-	blobs=$blobs"|vendor.google.airbrush.*|libairbrush-pixel.so";
-	blobs=$blobs"|libdarwinn_client.so|libdarwinn_compiler.so|vendor.google.darwinn.service.*";
+	#blobs=$blobs"|oslo.so|oslo.napp_header";
+	#blobs=$blobs"|BufferConfigValOslo.bin|OsloSensorConfig.bin|OsloSensorPackage.bin";
+	#blobs=$blobs"|vendor.google.airbrush.*|libairbrush-pixel.so";
 	#blobs=$blobs"|pixelatoms-cpp.so|vendor-pixelatoms-cpp.so"; #???
 
 	#Music Detection [Google]
@@ -481,7 +497,8 @@ echo "Deblobbing...";
 	blobs=$blobs"|libdme_main.so|libwbxmlparser.so|libprovlib.so";
 	blobs=$blobs"|dm_agent|dm_agent_binder";
 	blobs=$blobs"|npsmobex"; #Samsung?
-	blobs=$blobs"|ConnMO.apk|OmaDmclient.apk|USCCDM.apk|com.android.omadm.service.xml|com.android.omadm.radioconfig.xml|DCMO.apk|DiagMon.apk|DMConfigUpdate.apk|DMConfigUpdateLight.apk|DMService.apk|libdmengine.so|libdmjavaplugin.so|SprintDM.apk|SDM.apk|whitelist_com.android.omadm.service.xml|com.android.sdm.plugins.connmo.xml|com.android.sdm.plugins.sprintdm.xml|com.google.omadm.trigger.xml|com.android.sdm.plugins.diagmon.xml|com.android.sdm.plugins.dcmo.xml|com.android.sdm.plugins.usccdm.xml"; #Sprint
+	blobs=$blobs"|ConnMO.apk|OmaDmclient.apk|SprintHiddenMenu.apk|UpdateSetting.apk|USCCDM.apk|com.android.omadm.service.xml|com.android.omadm.radioconfig.xml|DCMO.apk|DiagMon.apk|DMConfigUpdate.apk|DMConfigUpdateLight.apk|DMService.apk|libdmengine.so|libdmjavaplugin.so|SprintDM.apk|SDM.apk|whitelist_com.android.omadm.service.xml|com.android.sdm.plugins.connmo.xml|com.android.sdm.plugins.sprintdm.xml|com.google.omadm.trigger.xml|com.android.sdm.plugins.diagmon.xml|com.android.sdm.plugins.dcmo.xml|com.android.sdm.plugins.usccdm.xml"; #Sprint
+	makes=$makes"|OmaDmclient|SprintHiddenMenu|UpdateSetting|SecPhone|HiddenMenu|DMConfigUpdate|SprintDM"; #SDM
 
 	#OpenMobileAPI [SIM Alliance]
 	#https://github.com/seek-for-android/platform_packages_apps_SmartCardService
@@ -541,9 +558,16 @@ echo "Deblobbing...";
 	#SecProtect [Qualcomm]
 	blobs=$blobs"|SecProtect.apk";
 
-	#SecureUI Frontends
-	blobs=$blobs"|libHealthAuthClient.so|libHealthAuthJNI.so|libSampleAuthJNI.so|libSampleAuthJNIv1.so|libSampleExtAuthJNI.so|libSecureExtAuthJNI.so|libSecureSampleAuthClient.so";
+	#SecureUI [Qualcomm]
+	blobs=$blobs"|com.qualcomm.qti.services.secureui.*";
+	if [ "$DOS_VERSION" != "LineageOS-14.1" ]; then
+		blobs=$blobs"|lib-sec-disp.so|libSecureUILib.so|libsecureui.so|libsecureuisvc_jni.so|libsecureui_svcsock.so"; #XXX: Can break qseecomd
+		blobs=$blobs"|libHealthAuthClient.so|libHealthAuthJNI.so|libSecureExtAuthJNI.so";
+	fi;
+	blobs=$blobs"|libSampleAuthJNI.so|libSampleAuthJNIv1.so|libSampleExtAuthJNI.so|libSecureSampleAuthClient.so";
 	#blobs=$blobs"|libsdedrm.so"; #Direct Rendering Manager not evil DRM? #XXX: potential breakage
+
+	#TrustedUI [Qualcomm]
 	blobs=$blobs"|vendor.qti.hardware.tui.*";
 	manifests=$manifests"|tui_comm|trustedui";
 
@@ -666,7 +690,7 @@ deblobDevice() {
 		sed -i '/ALL_DEFAULT_INSTALLED_MODULES/s/$(DXHDCP2_SYMLINKS)//' Android.mk; #Remove Discretix firmware
 		if [ "$DOS_DEBLOBBER_REMOVE_IMS" = true ]; then sed -i '/ALL_DEFAULT_INSTALLED_MODULES/s/$(IMS_SYMLINKS)//' Android.mk; fi; #Remove IMS firmware
 		sed -i '/ALL_DEFAULT_INSTALLED_MODULES/s/$(PLAYREADY_SYMLINKS)//' Android.mk; #Remove Microsoft Playready firmware
-		sed -i '/ALL_DEFAULT_INSTALLED_MODULES/s/$(SECUREUI_SYMLINKS)//' Android.mk; #Remove OMA-DM blobs
+		sed -i '/ALL_DEFAULT_INSTALLED_MODULES/s/$(SECUREUI_SYMLINKS)//' Android.mk; #Remove SecureUI blobs
 		sed -i '/ALL_DEFAULT_INSTALLED_MODULES/s/$(WIDEVINE_SYMLINKS)//' Android.mk; #Remove Google Widevine firmware
 		sed -i '/ALL_DEFAULT_INSTALLED_MODULES/s/$(WV_SYMLINKS)//' Android.mk; #Remove Google Widevine firmware
 	fi;
@@ -712,7 +736,7 @@ deblobDevice() {
 		fi;
 	fi;
 
-	awk -i inplace '!/loc.nlp_name/' *.prop *.mk &>/dev/null || true; #Disable QC Location Provider
+	sed -i '/loc.nlp_name/d' *.prop *.mk &>/dev/null || true; #Disable QC Location Provider
 	sed -i 's/drm.service.enabled=true/drm.service.enabled=false/' *.prop *.mk &>/dev/null || true;
 	if [ "$DOS_DEBLOBBER_REMOVE_APTX" = true ]; then sed -i 's/bt.enableAptXHD=true/bt.enableAptXHD=false/' *.prop *.mk &>/dev/null || true; fi; #Disable aptX
 	if [ "$DOS_DEBLOBBER_REMOVE_CNE" = true ]; then sed -i 's/cne.feature=./cne.feature=0/' *.prop *.mk &>/dev/null || true; fi; #Disable CNE
@@ -725,7 +749,7 @@ deblobDevice() {
 	sed -i 's/bluetooth.emb_wp_mode=true/bluetooth.emb_wp_mode=false/' *.prop *.mk &>/dev/null || true; #Disable WiPower
 	sed -i 's/bluetooth.wipower=true/bluetooth.wipower=false/' *.prop *.mk &>/dev/null || true; #Disable WiPower
 	sed -i 's/wfd.enable=1/wfd.enable=0/' *.prop *.mk &>/dev/null || true; #Disable Wi-Fi display
-	if [ "$DOS_DEBLOBBER_REMOVE_CAMEXT" = true ]; then awk -i inplace '!/vendor.camera.extensions/' *.prop *.mk &>/dev/null || true; fi; #Disable camera extensions
+	sed -i '/vendor.camera.extensions/d' *.prop *.mk &>/dev/null || true; #Disable camera extensions
 	if [ -f system.prop ]; then
 		if ! grep -q "drm.service.enabled=false" system.prop; then echo "drm.service.enabled=false" >> system.prop; fi; #Disable DRM server
 		if [ "$DOS_DEBLOBBER_REMOVE_GRAPHICS" = true ]; then
@@ -875,6 +899,10 @@ deblobVendorBp() {
 	sed -i ':a;N;s/\n/&/3;Ta;/manifest_android.hardware.drm-service.widevine.xml/!{P;D};:b;N;s/\n/&/8;Tb;d' "$bpfile";
 	sed -i ':a;N;s/\n/&/3;Ta;/manifest_vendor.xiaomi.hardware.mlipay.xml/!{P;D};:b;N;s/\n/&/8;Tb;d' "$bpfile";
 	sed -i ':a;N;s/\n/&/3;Ta;/vendor.qti.hardware.radio.atcmdfwd@1.0.xml/!{P;D};:b;N;s/\n/&/8;Tb;d' "$bpfile";
+	if [ "$DOS_DEBLOBBER_REMOVE_FACE" = true ]; then
+		sed -i ':a;N;s/\n/&/3;Ta;/android.hardware.biometrics.face-service.22.pixel.xml/!{P;D};:b;N;s/\n/&/8;Tb;d' "$bpfile";
+		sed -i ':a;N;s/\n/&/3;Ta;/manifest_face.xml/!{P;D};:b;N;s/\n/&/8;Tb;d' "$bpfile";
+	fi;
 }
 export -f deblobVendorBp;
 #
@@ -903,6 +931,22 @@ deblobVendors; #Deblob entire vendor directory
 rm -rf frameworks/av/drm/mediadrm/plugins/clearkey; #Remove ClearKey
 #rm -rf frameworks/av/drm/mediacas/plugins/clearkey; #XXX: breaks protobuf inclusion
 [[ -d vendor/samsung/nodevice ]] && rm -rf vendor/samsung/nodevice;
+
+#Remove proprietary libraries
+rm -rf external/firebase-messaging/* || true;
+rm -rf prebuilts/tools/common/m2/repository/com/apple/AppleJavaExtensions || true;
+rm -rf prebuilts/tools/common/m2/repository/com/cenqua/clover/clover || true;
+rm -rf prebuilts/tools/common/m2/repository/com/crittercism || true;
+rm -rf prebuilts/tools/common/m2/repository/com/facebook/android/facebook-android-sdk || true;
+rm -rf prebuilts/tools/common/m2/repository/com/firebase/firebase-client-android || true;
+rm -rf prebuilts/tools/common/m2/repository/com/firebase/firebase-client-jvm || true;
+rm -rf prebuilts/tools/common/m2/repository/com/google/android/gms || true;
+rm -rf prebuilts/tools/common/m2/repository/com/google/android/play || true;
+rm -rf prebuilts/tools/common/m2/repository/com/helpshift || true;
+#rm -rf prebuilts/tools/common/m2/repository/org/python/jython || true;
+#Remove apps depending on proprietary libraries
+rm -rf packages/apps/Car/DebuggingRestrictionController/* || true;
+rm -rf packages/apps/ImsServiceEntitlement/* || true;
 #
 #END OF DEBLOBBING
 #

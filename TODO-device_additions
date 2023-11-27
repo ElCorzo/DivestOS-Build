@@ -1,4 +1,4 @@
-Last updated: 2023-07-05
+Last updated: 2023-11-07
 
 20.0
 	android_kernel_bq_msm8953
@@ -17,10 +17,17 @@ Last updated: 2023-07-05
 		channel
 		ocean
 		river
+	android_kernel_motorola_sm6225
+		caprip
+		devon
+		hawao
+		rhode
 	android_kernel_motorola_sm7250
 		kiev
 		nairo
 		racer
+	android_kernel_nothing_sm7325
+		Spacewar
 	android_kernel_oneplus_sm4350
 		dre
 	android_kernel_shift_sdm845
@@ -39,10 +46,10 @@ Last updated: 2023-07-05
 	android_kernel_sony_sm8250
 		pdx203
 		pdx206
-	android_kernel_xiaomi_msm8937 - already supported
-		mi8917
 	android_kernel_xiaomi_sdm439
 		mi439
+	android_kernel_xiaomi_sm6150 - already supported
+		sweet
 	android_kernel_xiaomi_sm8350
 		haydn
 		lisa
@@ -52,9 +59,6 @@ Last updated: 2023-07-05
 
 
 19.1
-	android_kernel_lge_msm8996 - already supported
-		h872
-		us996d
 	android_kernel_motorola_msm8998
 		nash
 	android_kernel_motorola_sm8250
@@ -157,8 +161,6 @@ Last updated: 2023-07-05
 		peregrine
 		thea
 		titan
-	android_kernel_motorola_msm8952
-		athene
 	android_kernel_oppo_msm8974 - already supported
 		n3
 	android_kernel_samsung_exynos5420 - already supported

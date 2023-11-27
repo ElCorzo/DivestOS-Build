@@ -63,7 +63,7 @@ buildAll() {
 	#SD810
 	buildDevice oneplus2;
 	#SD730
-	buildDevice davinci avb; #broken - missing deps
+	buildDevice davinci avb;
 	#SD660
 	buildDevice Amber verity;
 }
@@ -79,10 +79,13 @@ patchWorkspaceReal() {
 
 	source build/envsetup.sh;
 	#repopick -it ten-firewall;
-	repopick -fit Q_asb_2023-03;
+	repopick -fit Q_asb_2023-03 -e 352333;
 	repopick -fit Q_asb_2023-04;
 	repopick -fit Q_asb_2023-05;
 	repopick -fit Q_asb_2023-06;
+	repopick -fit Q_asb_2023-07 -e 362202;
+	repopick -fit Q_asb_2023-08 -e 365443;
+	repopick -fit Q_asb_2023-09;
 
 	sh "$DOS_SCRIPTS/Patch.sh";
 	sh "$DOS_SCRIPTS_COMMON/Enable_Verity.sh";

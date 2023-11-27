@@ -71,9 +71,10 @@ if enterAndClear "build/make"; then
 git revert --no-edit ceb64cd86b1cf6be3b1214ace80d8260971f8877; #Re-enable the downgrade check
 applyPatch "$DOS_PATCHES/android_build/0001-OTA_Keys.patch"; #Add correct keys to recovery for OTA verification (DivestOS)
 applyPatch "$DOS_PATCHES/android_build/0002-Enable_fwrapv.patch"; #Use -fwrapv at a minimum (GrapheneOS)
+applyPatch "$DOS_PATCHES/android_build/0003-verity-openssl3.patch"; #Fix VB 1.0 failure due to openssl output format change
 sed -i '57i$(my_res_package): PRIVATE_AAPT_FLAGS += --auto-add-overlay' core/aapt2.mk; #Enable auto-add-overlay for packages, this allows the vendor overlay to easily work across all branches.
 awk -i inplace '!/Email/' target/product/core.mk; #Remove Email
-sed -i 's/2021-10-05/2023-07-05/' core/version_defaults.mk; #Bump Security String #XXX
+sed -i 's/2021-10-05/2023-11-05/' core/version_defaults.mk; #Bump Security String #XXX
 fi;
 
 if enterAndClear "build/soong"; then
@@ -88,6 +89,10 @@ fi;
 
 if enterAndClear "device/qcom/sepolicy"; then
 applyPatch "$DOS_PATCHES/android_device_qcom_sepolicy/0001-Camera_Fix.patch"; #Fix camera on -user builds XXX: REMOVE THIS TRASH (DivestOS)
+fi;
+
+if enterAndClear "external/aac"; then
+applyPatch "$DOS_PATCHES/android_external_aac/364027.patch"; #R_asb_2023-08 Increase patchParam array size by one and fix out-of-bounce write in resetLppTransposer().
 fi;
 
 if enterAndClear "external/chromium-webview"; then
@@ -121,8 +126,21 @@ fi;
 #fi;
 #fi;
 
+if enterAndClear "external/libvpx"; then
+applyPatch "$DOS_PATCHES_COMMON/android_external_libvpx/CVE-2023-5217.patch"; #VP8: disallow thread count changes
+fi;
+
+if enterAndClear "external/libxml2"; then
+applyPatch "$DOS_PATCHES/android_external_libxml2/368053.patch"; #R_asb_2023-10 malloc-fail: Fix OOB read after xmlRegGetCounter
+fi;
+
 if enterAndClear "external/svox"; then
 git revert --no-edit 1419d63b4889a26d22443fd8df1f9073bf229d3d; #Add back Makefiles
+fi;
+
+if enterAndClear "external/webp"; then
+applyPatch "$DOS_PATCHES_COMMON/android_external_webp/373948.patch"; #R_asb_2023-11 Update to v1.1.0-8-g50f60add
+sed -i '85i\ \ \ \ \ \ \ \ "src/utils/filters_utils.c",' Android.bp; #Fixup
 fi;
 
 if enterAndClear "external/zlib"; then
@@ -132,6 +150,8 @@ fi;
 if enterAndClear "frameworks/av"; then
 #if [ "$DOS_GRAPHENE_MALLOC_BROKEN" = true ]; then applyPatch "$DOS_PATCHES/android_frameworks_av/0001-HM-No_RLIMIT_AS.patch"; fi; #(GrapheneOS)
 applyPatch "$DOS_PATCHES/android_frameworks_av/358729.patch"; #n-asb-2023-06 Fix NuMediaExtractor::readSampleData buffer Handling
+applyPatch "$DOS_PATCHES/android_frameworks_av/365962.patch"; #R_asb_2023-09 Fix Segv on unknown address error flagged by fuzzer test.
+applyPatch "$DOS_PATCHES/android_frameworks_av/373949.patch"; #R_asb_2023-11 Fix for heap buffer overflow issue flagged by fuzzer test.
 fi;
 
 if enterAndClear "frameworks/base"; then
@@ -192,6 +212,19 @@ applyPatch "$DOS_PATCHES/android_frameworks_base/358732-backport.patch"; #n-asb-
 applyPatch "$DOS_PATCHES/android_frameworks_base/360953-backport.patch"; #R_asb_2023-07 Sanitize VPN label to prevent HTML injection
 applyPatch "$DOS_PATCHES/android_frameworks_base/360954-backport.patch"; #R_asb_2023-07 Limit the number of supported v1 and v2 signers
 applyPatch "$DOS_PATCHES/android_frameworks_base/360962-backport.patch"; #R_asb_2023-07 Truncate ShortcutInfo Id
+applyPatch "$DOS_PATCHES/android_frameworks_base/364029-backport.patch"; #R_asb_2023-08 ActivityManager#killBackgroundProcesses can kill caller's own app only
+applyPatch "$DOS_PATCHES/android_frameworks_base/364033-backport.patch"; #R_asb_2023-08 Ensure policy has no absurdly long strings
+applyPatch "$DOS_PATCHES/android_frameworks_base/364036-backport.patch"; #R_asb_2023-08 Verify URI permissions in MediaMetadata
+applyPatch "$DOS_PATCHES/android_frameworks_base/364037.patch"; #R_asb_2023-08 Use Settings.System.getIntForUser instead of getInt to make sure user specific settings are used
+applyPatch "$DOS_PATCHES/android_frameworks_base/364038-backport.patch"; #R_asb_2023-08 Resolve StatusHints image exploit across user.
+applyPatch "$DOS_PATCHES/android_frameworks_base/365967.patch"; #R_asb_2023-09 Update AccountManagerService checkKeyIntentParceledCorrectly.
+applyPatch "$DOS_PATCHES/android_frameworks_base/368055.patch"; #R_asb_2023-10 RingtoneManager: verify default ringtone is audio
+applyPatch "$DOS_PATCHES/android_frameworks_base/368059.patch"; #R_asb_2023-10 Do not share key mappings with JNI object
+applyPatch "$DOS_PATCHES/android_frameworks_base/368061.patch"; #R_asb_2023-10 Fix KCM key mapping cloning
+applyPatch "$DOS_PATCHES/android_frameworks_base/368062-backport.patch"; #R_asb_2023-10 Disallow loading icon from content URI to PipMenu
+applyPatch "$DOS_PATCHES/android_frameworks_base/368063.patch"; #R_asb_2023-10 Fixing DatabaseUtils to detect malformed UTF-16 strings
+applyPatch "$DOS_PATCHES/android_frameworks_base/373953.patch"; #R_asb_2023-11 Use type safe API of readParcelableArray
+applyPatch "$DOS_PATCHES/android_frameworks_base/373955.patch"; #R_asb_2023-11 [SettingsProvider] verify ringtone URI before setting
 applyPatch "$DOS_PATCHES_COMMON/android_frameworks_base/0001-Browser_No_Location.patch"; #Don't grant location permission to system browsers (GrapheneOS)
 applyPatch "$DOS_PATCHES_COMMON/android_frameworks_base/0003-SUPL_No_IMSI.patch"; #Don't send IMSI to SUPL (MSe1969)
 applyPatch "$DOS_PATCHES_COMMON/android_frameworks_base/0004-Fingerprint_Lockout.patch"; #Enable fingerprint lockout after five failed attempts (GrapheneOS)
@@ -219,6 +252,7 @@ applyPatch "$DOS_PATCHES/android_frameworks_native/326752.patch"; #P_asb_2022-03
 applyPatch "$DOS_PATCHES/android_frameworks_native/355772.patch"; #R_asb_2023-05 Check for malformed Sensor Flattenable
 applyPatch "$DOS_PATCHES/android_frameworks_native/355773-backport.patch"; #R_asb_2023-05 Remove some new memory leaks from SensorManager
 applyPatch "$DOS_PATCHES/android_frameworks_native/355774-backport.patch"; #R_asb_2023-05 Add removeInstanceForPackageMethod to SensorManager
+applyPatch "$DOS_PATCHES/android_frameworks_native/365969-backport.patch"; #R_asb_2023-09 Allow sensors list to be empty
 if [ "$DOS_SENSORS_PERM" = true ]; then applyPatch "$DOS_PATCHES/android_frameworks_native/0001-Sensors.patch"; fi; #Permission for sensors access (MSe1969)
 fi;
 
@@ -307,6 +341,11 @@ applyPatch "$DOS_PATCHES/android_packages_apps_LineageParts/0001-Remove_Analytic
 cp -f "$DOS_PATCHES_COMMON/contributors.db" assets/contributors.db; #Update contributors cloud
 fi;
 
+if enterAndClear "packages/apps/Messaging"; then
+applyPatch "$DOS_PATCHES_COMMON/android_packages_apps_Messaging/0001-null-fix.patch"; #Handle null case (GrapheneOS)
+#applyPatch "$DOS_PATCHES_COMMON/android_packages_apps_Messaging/0002-missing-channels.patch"; #Add notification channels where missing (LineageOS)
+fi;
+
 if enterAndClear "packages/apps/PackageInstaller"; then
 applyPatch "$DOS_PATCHES/android_packages_apps_PackageInstaller/344181.patch"; #P_asb_2022-11 Hide overlays on ReviewPermissionsAtivity
 fi;
@@ -332,6 +371,8 @@ applyPatch "$DOS_PATCHES/android_packages_apps_Settings/345911.patch"; #P_asb_20
 applyPatch "$DOS_PATCHES/android_packages_apps_Settings/345912-backport.patch"; #P_asb_2022-12 Add FLAG_SECURE for ChooseLockPassword and Pattern
 applyPatch "$DOS_PATCHES/android_packages_apps_Settings/351914-backport.patch"; #P_asb_2023-03 FRP bypass defense in the settings app
 applyPatch "$DOS_PATCHES/android_packages_apps_Settings/358568-backport.patch"; #R_asb_2023-06 Convert argument to intent in AddAccountSettings.
+applyPatch "$DOS_PATCHES/android_packages_apps_Settings/365973-backport.patch"; #R_asb_2023-09 Prevent non-system IME from becoming device admin
+applyPatch "$DOS_PATCHES/android_packages_apps_Settings/367639-backport.patch"; #n-asb-2023-10 Restrict ApnEditor settings
 git revert --no-edit a96df110e84123fe1273bff54feca3b4ca484dcd; #Don't hide OEM unlock
 applyPatch "$DOS_PATCHES/android_packages_apps_Settings/0001-Captive_Portal_Toggle.patch"; #Add option to disable captive portal checks (MSe1969)
 if [ "$DOS_SENSORS_PERM" = true ]; then
@@ -344,6 +385,10 @@ fi;
 
 if enterAndClear "packages/apps/SetupWizard"; then
 applyPatch "$DOS_PATCHES/android_packages_apps_SetupWizard/0001-Remove_Analytics.patch"; #Remove analytics (DivestOS)
+fi;
+
+if enterAndClear "packages/apps/Trebuchet"; then
+applyPatch "$DOS_PATCHES/android_packages_apps_Trebuchet/365974.patch"; #R_asb_2023-09 Fix permission issue in legacy shortcut
 fi;
 
 if enterAndClear "packages/apps/TvSettings"; then
@@ -378,6 +423,8 @@ fi;
 
 if enterAndClear "packages/providers/TelephonyProvider"; then
 applyPatch "$DOS_PATCHES/android_packages_providers_TelephonyProvider/344182.patch"; #P_asb_2022-11 Check dir path before updating permissions.
+applyPatch "$DOS_PATCHES/android_packages_providers_TelephonyProvider/364040-backport.patch"; #R_asb_2023-08 Update file permissions using canonical path
+applyPatch "$DOS_PATCHES/android_packages_providers_TelephonyProvider/373957-backport.patch"; #R_asb_2023-11 Block access to sms/mms db from work profile.
 fi;
 
 if enterAndClear "packages/services/Telecomm"; then
@@ -386,10 +433,12 @@ applyPatch "$DOS_PATCHES/android_packages_services_Telecomm/344183.patch"; #P_as
 applyPatch "$DOS_PATCHES/android_packages_services_Telecomm/345913.patch"; #P_asb_2022-12 Hide overlay windows when showing phone account enable/disable screen.
 applyPatch "$DOS_PATCHES/android_packages_services_Telecomm/347042.patch"; #P_asb_2023-01 Fix security vulnerability when register phone accounts.
 applyPatch "$DOS_PATCHES/android_packages_services_Telecomm/355777-backport.patch"; #R_asb_2023-05 enforce stricter rules when registering phoneAccount
+applyPatch "$DOS_PATCHES/android_packages_services_Telecomm/364041-backport.patch"; #R_asb_2023-08 Resolve StatusHints image exploit across user.
 fi;
 
 if enterAndClear "packages/services/Telephony"; then
 applyPatch "$DOS_PATCHES/android_packages_services_Telephony/347041-backport.patch"; #P_asb_2023-01 Prevent overlays on the phone settings
+applyPatch "$DOS_PATCHES/android_packages_services_Telephony/365978-backport.patch"; #R_asb_2023-09 Fixed leak of cross user data in multiple settings.
 applyPatch "$DOS_PATCHES/android_packages_services_Telephony/0001-PREREQ_Handle_All_Modes.patch"; #(DivestOS)
 applyPatch "$DOS_PATCHES/android_packages_services_Telephony/0002-More_Preferred_Network_Modes.patch";
 fi;
@@ -424,6 +473,11 @@ applyPatch "$DOS_PATCHES/android_system_bt/358580.patch"; #R_asb_2023-06 Prevent
 applyPatch "$DOS_PATCHES/android_system_bt/358581-backport.patch"; #R_asb_2023-06 Revert "Revert "[RESTRICT AUTOMERGE] Validate buffer length in sdpu_build_uuid_seq""
 applyPatch "$DOS_PATCHES/android_system_bt/358582.patch"; #R_asb_2023-06 Revert "Revert "Fix wrong BR/EDR link key downgrades (P_256->P_192)""
 applyPatch "$DOS_PATCHES/android_system_bt/360969.patch"; #R_asb_2023-07 Fix gatt_end_operation buffer overflow
+applyPatch "$DOS_PATCHES/android_system_bt/365979.patch"; #R_asb_2023-09 Fix an integer overflow bug in avdt_msg_asmbl
+applyPatch "$DOS_PATCHES/android_system_bt/365980.patch"; #R_asb_2023-09 Fix integer overflow in build_read_multi_rsp
+applyPatch "$DOS_PATCHES/android_system_bt/365981.patch"; #R_asb_2023-09 Fix potential abort in btu_av_act.cc
+applyPatch "$DOS_PATCHES/android_system_bt/365982-prereq.patch"; #Fix reliable write
+applyPatch "$DOS_PATCHES/android_system_bt/365982.patch"; #R_asb_2023-09 Fix UAF in gatt_cl.cc
 fi;
 
 if enterAndClear "system/ca-certificates"; then
@@ -498,24 +552,7 @@ fi;
 #
 #START OF DEVICE CHANGES
 #
-if enterAndClear "device/asus/deb"; then
-compressRamdisks;
-sed -i 's|vendor/cm|vendor/lineage|' lineage.mk;
-awk -i inplace '!/ioctl/' sepolicy/audioserver.te; #neverallow
-fi;
-
-if enterAndClear "device/asus/flo"; then
-compressRamdisks;
-echo "/dev/block/platform/msm_sdcc\.1/by-name/misc u:object_r:misc_block_device:s0" >> sepolicy/file_contexts;
-fi;
-
-if enterAndClear "device/asus/msm8916-common"; then
-rm -rf Android.bp sensors; #exact duplicate in asus/flo #XXX be careful with this
-fi;
-
-#if enterAndClear "device/moto/shamu"; then
-#git revert --no-edit 05fb49518049440f90423341ff25d4f75f10bc0c; #restore releasetools #TODO
-#fi;
+#none yet
 
 #Make changes to all devices
 cd "$DOS_BUILD_BASE";
@@ -539,22 +576,16 @@ removeUntrustedCerts || true;
 #Tweaks for <2GB RAM devices
 enableLowRam "device/asus/fugu";
 #Tweaks for <3GB RAM devices
-enableLowRam "device/asus/deb";
-enableLowRam "device/asus/flo";
-enableLowRam "device/htc/flounder";
-enableLowRam "device/htc/flounder_lte";
-enableLowRam "device/lge/bullhead";
-enableLowRam "device/lge/hammerhead";
+#enableLowRam "device/htc/flounder";
+#enableLowRam "device/htc/flounder_lte";
+#enableLowRam "device/lge/bullhead";
 #Tweaks for 2GB/3GB RAM devices
 #enableLowRam "device/asus/Z00T";
 #Tweaks for <4GB RAM devices
 #enableLowRam "device/huawei/angler";
 #enableLowRam "device/google/dragon";
-#enableLowRam "device/moto/shamu";
-#enableLowRam "device/nextbit/ether";
 
 #Fix broken options enabled by hardenDefconfig()
-[[ -d kernel/google/msm ]] && sed -i "s/CONFIG_DEBUG_RODATA=y/# CONFIG_DEBUG_RODATA is not set/" kernel/google/msm/arch/arm/configs/lineageos_*_defconfig; #Breaks on compile
 [[ -d kernel/zte/msm8996 ]] && sed -i "s/CONFIG_STRICT_MEMORY_RWX=y/# CONFIG_STRICT_MEMORY_RWX is not set/" kernel/zte/msm8996/arch/arm64/configs/lineageos_*_defconfig; #Breaks on compile
 
 sed -i 's/^YYLTYPE yylloc;/extern YYLTYPE yylloc;/' kernel/*/*/scripts/dtc/dtc-lexer.l* || true; #Fix builds with GCC 10

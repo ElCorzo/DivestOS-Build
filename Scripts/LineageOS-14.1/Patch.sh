@@ -76,12 +76,17 @@ sed -i '50i$(my_res_package): PRIVATE_AAPT_FLAGS += --auto-add-overlay' core/aap
 sed -i '296iLOCAL_AAPT_FLAGS += --auto-add-overlay' core/package_internal.mk;
 awk -i inplace '!/Email/' target/product/core.mk; #Remove Email
 awk -i inplace '!/Exchange2/' target/product/core.mk;
-sed -i 's/2021-06-05/2023-07-05/' core/version_defaults.mk; #Bump Security String #n-asb-2023-07 #XXX
+sed -i 's/2021-06-05/2023-11-05/' core/version_defaults.mk; #Bump Security String #n-asb-2023-11 #XXX
 fi;
 
 if enterAndClear "device/qcom/sepolicy"; then
 applyPatch "$DOS_PATCHES/android_device_qcom_sepolicy/248649.patch"; #msm_irqbalance: Allow read for stats and interrupts (syphyr)
 applyPatch "$DOS_PATCHES/android_device_qcom_sepolicy/0001-Camera_Fix.patch"; #Fix camera on user builds XXX: REMOVE THIS TRASH (DivestOS)
+fi;
+
+if enterAndClear "external/aac"; then
+applyPatch "$DOS_PATCHES/android_external_aac/364027.patch"; #R_asb_2023-08 Increase patchParam array size by one and fix out-of-bounce write in resetLppTransposer().
+applyPatch "$DOS_PATCHES/android_external_aac/0001-makefile.patch"; #Add Android.mk for legacy builds (syphyr)
 fi;
 
 if enterAndClear "external/apache-http"; then
@@ -101,7 +106,8 @@ applyPatch "$DOS_PATCHES/android_external_expat/348649.patch"; #n-asb-2023-02 Fi
 fi;
 
 if enterAndClear "external/freetype"; then
-applyPatch "$DOS_PATCHES/android_external_freetype/360899.patch"; #n-asb-2023-07 Cherry-pick two upstream changes
+applyPatch "$DOS_PATCHES/android_external_freetype/0001-makefile.patch"; #Add Android.mk for legacy builds (syphyr)
+applyPatch "$DOS_PATCHES/android_external_freetype/0002-fixup.patch"; #Enable png and zlib support to Android.mk (syphyr)
 fi;
 
 if enterAndClear "external/libavc"; then
@@ -127,6 +133,14 @@ applyPatch "$DOS_PATCHES/android_external_libnfc-nci/353760.patch"; #n-asb-2023-
 applyPatch "$DOS_PATCHES/android_external_libnfc-nci/360898.patch"; #n-asb-2023-07 OOBW in rw_i93_send_to_upper()
 fi;
 
+if enterAndClear "external/libvpx"; then
+applyPatch "$DOS_PATCHES/android_external_libvpx/CVE-2023-5217-backport.patch"; #VP8: disallow thread count changes
+fi;
+
+if enterAndClear "external/libxml2"; then
+applyPatch "$DOS_PATCHES/android_external_libxml2/367634.patch"; #n-asb-2023-10 malloc-fail: Fix OOB read after xmlRegGetCounter
+fi;
+
 if enterAndClear "external/sonivox"; then
 applyPatch "$DOS_PATCHES/android_external_sonivox/317038.patch"; #n-asb-2021-10 Fix global buffer overflow in WT_InterpolateNoLoop
 fi;
@@ -139,6 +153,10 @@ if enterAndClear "external/tremolo"; then
 applyPatch "$DOS_PATCHES/android_external_tremolo/319986.patch"; #n-asb-2021-12 handle cases where order isn't a multiple of dimension
 fi;
 
+if enterAndClear "external/webp"; then
+applyPatch "$DOS_PATCHES/android_external_webp/0001-makefile.patch"; #Add Android.mk for legacy builds (syphyr)
+fi;
+
 if enterAndClear "external/zlib"; then
 applyPatch "$DOS_PATCHES/android_external_zlib/351107.patch"; #n-asb-2023-03 Fix a bug when getting a gzip header extra field with inflate().
 fi;
@@ -148,6 +166,8 @@ applyPatch "$DOS_PATCHES/android_frameworks_av/212799.patch"; #FLAC extractor CV
 applyPatch "$DOS_PATCHES/android_frameworks_av/319987.patch"; #n-asb-2021-12 Fix heap-buffer-overflow in MPEG4Extractor
 applyPatch "$DOS_PATCHES/android_frameworks_av/321222.patch"; #n-asb-2022-01 SimpleDecodingSource:Prevent OOB write in heap mem
 applyPatch "$DOS_PATCHES/android_frameworks_av/358729.patch"; #n-asb-2023-06 Fix NuMediaExtractor::readSampleData buffer Handling
+applyPatch "$DOS_PATCHES/android_frameworks_av/365698.patch"; #n-asb-2023-09 Fix Segv on unknown address error flagged by fuzzer test.
+applyPatch "$DOS_PATCHES/android_frameworks_av/373035.patch"; #n-asb-2023-11 Fix for heap buffer overflow issue flagged by fuzzer test.
 fi;
 
 if enterAndClear "frameworks/base"; then
@@ -207,6 +227,18 @@ applyPatch "$DOS_PATCHES/android_frameworks_base/358734.patch"; #n-asb-2023-06 H
 applyPatch "$DOS_PATCHES/android_frameworks_base/360893.patch"; #n-asb-2023-07 Sanitize VPN label to prevent HTML injection
 applyPatch "$DOS_PATCHES/android_frameworks_base/360894.patch"; #n-asb-2023-07 Limit the number of supported v1 and v2 signers
 applyPatch "$DOS_PATCHES/android_frameworks_base/360895.patch"; #n-asb-2023-07 Truncate ShortcutInfo Id
+applyPatch "$DOS_PATCHES/android_frameworks_base/364029-backport.patch"; #R_asb_2023-08 ActivityManager#killBackgroundProcesses can kill caller's own app only
+applyPatch "$DOS_PATCHES/android_frameworks_base/364033-backport.patch"; #R_asb_2023-08 Ensure policy has no absurdly long strings
+applyPatch "$DOS_PATCHES/android_frameworks_base/364036-backport.patch"; #R_asb_2023-08 Verify URI permissions in MediaMetadata
+applyPatch "$DOS_PATCHES/android_frameworks_base/364037.patch"; #R_asb_2023-08 Use Settings.System.getIntForUser instead of getInt to make sure user specific settings are used
+applyPatch "$DOS_PATCHES/android_frameworks_base/364038-backport.patch"; #R_asb_2023-08 Resolve StatusHints image exploit across user.
+applyPatch "$DOS_PATCHES/android_frameworks_base/365782.patch"; #n-asb-2023-09 Update AccountManagerService checkKeyIntentParceledCorrectly.
+applyPatch "$DOS_PATCHES/android_frameworks_base/367635.patch"; #n-asb-2023-10 RingtoneManager: verify default ringtone is audio
+applyPatch "$DOS_PATCHES/android_frameworks_base/367636.patch"; #n-asb-2023-10 Fixing DatabaseUtils to detect malformed UTF-16 strings
+applyPatch "$DOS_PATCHES/android_frameworks_base/367637.patch"; #n-asb-2023-10 Do not share key mappings with JNI object
+applyPatch "$DOS_PATCHES/android_frameworks_base/367638.patch"; #n-asb-2023-10 Fix KCM key mapping cloning
+applyPatch "$DOS_PATCHES/android_frameworks_base/373033.patch"; #n-asb-2023-11 [SettingsProvider] verify ringtone URI before setting
+applyPatch "$DOS_PATCHES/android_frameworks_base/373034.patch"; #n-asb-2023-11 Use type safe API of readParcelableArray
 git revert --no-edit 0326bb5e41219cf502727c3aa44ebf2daa19a5b3; #Re-enable doze on devices without gms
 applyPatch "$DOS_PATCHES/android_frameworks_base/248599.patch"; #Make SET_TIME_ZONE permission match SET_TIME (AOSP)
 applyPatch "$DOS_PATCHES/android_frameworks_base/0001-Reduced_Resolution.patch"; #Allow reducing resolution to save power TODO: Add 800x480 (DivestOS)
@@ -233,6 +265,7 @@ applyPatch "$DOS_PATCHES/android_frameworks_native/325993.patch"; #n-asb-2022-03
 applyPatch "$DOS_PATCHES/android_frameworks_native/355868.patch"; #n-asb-2023-05 Check for malformed Sensor Flattenable
 applyPatch "$DOS_PATCHES/android_frameworks_native/355869.patch"; #n-asb-2023-05 Fix sanitizer in ISensorService list functions.
 applyPatch "$DOS_PATCHES/android_frameworks_native/355870.patch"; #n-asb-2023-05 Remove some new memory leaks from SensorManager
+applyPatch "$DOS_PATCHES/android_frameworks_native/365756.patch"; #n-asb-2023-09 Allow sensors list to be empty
 if [ "$DOS_SENSORS_PERM" = true ]; then applyPatch "$DOS_PATCHES/android_frameworks_native/0001-Sensors.patch"; fi; #Permission for sensors access (MSe1969)
 fi;
 
@@ -350,6 +383,10 @@ applyPatch "$DOS_PATCHES/android_packages_apps_KeyChain/319990.patch"; #n-asb-20
 applyPatch "$DOS_PATCHES/android_packages_apps_KeyChain/334036.patch"; #n-asb-2022-07 Encode authority part of uri before showing in UI
 fi;
 
+if enterAndClear "packages/apps/Messaging"; then
+applyPatch "$DOS_PATCHES_COMMON/android_packages_apps_Messaging/0001-null-fix.patch"; #Handle null case (GrapheneOS)
+fi;
+
 if enterAndClear "packages/apps/Nfc"; then
 applyPatch "$DOS_PATCHES/android_packages_apps_Nfc/315715.patch"; #n-asb-2021-09 Add HIDE_NON_SYSTEM_OVERLAY_WINDOWS permission to Nfc
 applyPatch "$DOS_PATCHES/android_packages_apps_Nfc/328308.patch"; #n-asb-2022-04 Do not set default contactless application without user interaction
@@ -376,6 +413,7 @@ applyPatch "$DOS_PATCHES/android_packages_apps_Settings/334874.patch"; #n-asb-20
 applyPatch "$DOS_PATCHES/android_packages_apps_Settings/334875.patch"; #n-asb-2022-08 Fix Settings crash when setting a null ringtone
 applyPatch "$DOS_PATCHES/android_packages_apps_Settings/345679.patch"; #n-asb-2022-12 Add FLAG_SECURE for ChooseLockPassword and Pattern
 applyPatch "$DOS_PATCHES/android_packages_apps_Settings/358738.patch"; #n-asb-2023-06 Convert argument to intent in AddAccountSettings.
+applyPatch "$DOS_PATCHES/android_packages_apps_Settings/367639.patch"; #n-asb-2023-10 Restrict ApnEditor settings
 git revert --no-edit 2ebe6058c546194a301c1fd22963d6be4adbf961; #Don't hide OEM unlock
 applyPatch "$DOS_PATCHES/android_packages_apps_Settings/201113.patch"; #wifi: Add world regulatory domain country code (syphyr)
 applyPatch "$DOS_PATCHES/android_packages_apps_Settings/0001-Captive_Portal_Toggle.patch"; #Add option to disable captive portal checks (MSe1969)
@@ -420,10 +458,12 @@ if enterAndClear "packages/services/Telecomm"; then
 applyPatch "$DOS_PATCHES/android_packages_services_Telecomm/332456.patch"; #n-asb-2022-06 limit TelecomManager#registerPhoneAccount to 10
 applyPatch "$DOS_PATCHES/android_packages_services_Telecomm/343953.patch"; #n-asb-2022-11 Switch TelecomManager List getters to ParceledListSlice
 applyPatch "$DOS_PATCHES/android_packages_services_Telecomm/345526.patch"; #n-asb-2022-12 Hide overlay windows when showing phone account enable/disable screen.
+applyPatch "$DOS_PATCHES/android_packages_services_Telecomm/364041-backport.patch"; #R_asb_2023-08 Resolve StatusHints image exploit across user.
 fi;
 
 if enterAndClear "packages/services/Telephony"; then
 applyPatch "$DOS_PATCHES/android_packages_services_Telephony/346954.patch"; #n-asb-2023-01 Prevent overlays on the phone settings
+applyPatch "$DOS_PATCHES/android_packages_services_Telephony/365699.patch"; #n-asb-2023-09 Fixed leak of cross user data in multiple settings.
 applyPatch "$DOS_PATCHES/android_packages_services_Telephony/0001-PREREQ_Handle_All_Modes.patch"; #(DivestOS)
 applyPatch "$DOS_PATCHES/android_packages_services_Telephony/0002-More_Preferred_Network_Modes.patch";
 fi;
@@ -438,6 +478,7 @@ fi;
 
 if enterAndClear "packages/providers/TelephonyProvider"; then
 applyPatch "$DOS_PATCHES/android_packages_providers_TelephonyProvider/343954.patch"; #n-asb-2022-11 Check dir path before updating permissions.
+applyPatch "$DOS_PATCHES/android_packages_providers_TelephonyProvider/364040-backport.patch"; #R_asb_2023-08 Update file permissions using canonical path
 fi;
 
 if enterAndClear "system/bt"; then
@@ -473,6 +514,10 @@ applyPatch "$DOS_PATCHES/android_system_bt/358735.patch"; #n-asb-2023-06 Prevent
 applyPatch "$DOS_PATCHES/android_system_bt/358736.patch"; #n-asb-2023-06 Revert "Revert "[RESTRICT AUTOMERGE] Validate buffer length in sdpu_build_uuid_seq""
 applyPatch "$DOS_PATCHES/android_system_bt/358737.patch"; #n-asb-2023-06 Revert "Revert "Fix wrong BR/EDR link key downgrades (P_256->P_192)""
 applyPatch "$DOS_PATCHES/android_system_bt/360892.patch"; #n-asb-2023-07 Fix gatt_end_operation buffer overflow
+applyPatch "$DOS_PATCHES/android_system_bt/365694.patch"; #n-asb-2023-09 Fix integer overflow in build_read_multi_rsp
+applyPatch "$DOS_PATCHES/android_system_bt/365695.patch"; #n-asb-2023-09 Fix reliable write.
+applyPatch "$DOS_PATCHES/android_system_bt/365696.patch"; #n-asb-2023-09 Fix UAF in gatt_cl.cc
+applyPatch "$DOS_PATCHES/android_system_bt/365697.patch"; #n-asb-2023-09 Fix an integer overflow bug in avdt_msg_asmbl
 applyPatch "$DOS_PATCHES/android_system_bt/229574.patch"; #bt-sbc-hd-dualchannel-nougat: Increase maximum Bluetooth SBC codec bitrate for SBC HD (ValdikSS)
 applyPatch "$DOS_PATCHES/android_system_bt/229575.patch"; #bt-sbc-hd-dualchannel-nougat: Explicit SBC Dual Channel (SBC HD) support (ValdikSS)
 applyPatch "$DOS_PATCHES/android_system_bt/242134.patch"; #avrc_bld_get_attrs_rsp - fix attribute length position off by one (cprhokie)
@@ -563,14 +608,10 @@ if enterAndClear "device/lge/g4-common"; then
 sed -i '3itypeattribute hwaddrs misc_block_device_exception;' sepolicy/hwaddrs.te;
 fi;
 
-if enterAndClear "device/motorola/clark"; then
-sed -i 's/0xA04D/0xA04D|0xA052/' board-info.txt; #Allow installing on Nougat bootloader, assume the user is running the correct modem
-rm board-info.txt; #Never restrict installation
-echo "recovery_only(\`" >> sepolicy/recovery.te; #304224: Allow recovery to unzip and chmod modem firmware
-echo "  allow firmware_file labeledfs:filesystem associate;" >> sepolicy/recovery.te;
-echo "  allow recovery firmware_file:dir rw_dir_perms;" >> sepolicy/recovery.te;
-echo "  allow recovery firmware_file:file create_file_perms;" >> sepolicy/recovery.te;
-echo "')" >> sepolicy/recovery.te;
+if enterAndClear "device/motorola/athene"; then
+sed -i 's/camera.msm8952.so/camera.vendor.msm8952.so/' proprietary-files.txt; #Fixups
+sed -i 's/libchromatix_ov13850_polaris_default_video_bu64297/libchromatix_ov13850_polaris_default_video_bu64297.so/' proprietary-files.txt;
+awk -i inplace '!/qti-telephony-common/' proprietary-files.txt; #Fix Phone crashing
 fi;
 
 if enterAndClear "device/samsung/exynos5420-common"; then
@@ -620,7 +661,7 @@ find "device" -name "gps\.conf*" -type f -print0 | xargs -0 -n 1 -P 4 -I {} bash
 find "vendor" -name "gps\.conf" -type f -print0 | xargs -0 -n 1 -P 4 -I {} bash -c 'hardenLocationConf "{}"';
 find "device" -type d -name "overlay" -print0 | xargs -0 -n 1 -P 4 -I {} bash -c 'hardenLocationFWB "{}"';
 if [ "$DOS_DEBLOBBER_REMOVE_IMS" = "false" ]; then find "device" -maxdepth 2 -mindepth 2 -type d -print0 | xargs -0 -n 1 -P 8 -I {} bash -c 'volteOverride "{}"'; fi;
-find "device" -maxdepth 2 -mindepth 2 -type d -print0 | xargs -0 -n 1 -P 8 -I {} bash -c 'enableDexPreOpt "{}"';
+#find "device" -maxdepth 2 -mindepth 2 -type d -print0 | xargs -0 -n 1 -P 8 -I {} bash -c 'enableDexPreOpt "{}"';
 find "device" -maxdepth 2 -mindepth 2 -type d -print0 | xargs -0 -n 1 -P 8 -I {} bash -c 'hardenUserdata "{}"';
 if [ "$DOS_STRONG_ENCRYPTION_ENABLED" = true ]; then find "device" -maxdepth 2 -mindepth 2 -type d -print0 | xargs -0 -n 1 -P 8 -I {} bash -c 'enableStrongEncryption "{}"'; fi;
 find "kernel" -maxdepth 2 -mindepth 2 -type d -print0 | xargs -0 -n 1 -P 4 -I {} bash -c 'hardenDefconfig "{}"';
@@ -644,24 +685,24 @@ enableLowRam "device/samsung/toro";
 enableLowRam "device/samsung/toroplus";
 enableLowRam "device/samsung/tuna";
 #Tweaks for <3GB RAM devices
-enableLowRam "device/amazon/apollo";
-enableLowRam "device/amazon/hdx-common";
-enableLowRam "device/amazon/thor";
-enableLowRam "device/htc/m7";
-enableLowRam "device/htc/m7-common";
-enableLowRam "device/htc/msm8960-common";
-enableLowRam "device/motorola/clark";
-enableLowRam "device/samsung/d2att";
-enableLowRam "device/samsung/d2-common";
-enableLowRam "device/samsung/d2spr";
-enableLowRam "device/samsung/d2tmo";
-enableLowRam "device/samsung/d2vzw";
-enableLowRam "device/samsung/i9305";
-enableLowRam "device/samsung/kona-common";
-enableLowRam "device/samsung/msm8960-common";
-enableLowRam "device/samsung/n5100";
-enableLowRam "device/samsung/n5110";
-enableLowRam "device/samsung/n5120";
+#enableLowRam "device/amazon/apollo";
+#enableLowRam "device/amazon/hdx-common";
+#enableLowRam "device/amazon/thor";
+#enableLowRam "device/htc/m7";
+#enableLowRam "device/htc/m7-common";
+#enableLowRam "device/htc/msm8960-common";
+#enableLowRam "device/motorola/athene";
+#enableLowRam "device/samsung/d2att";
+#enableLowRam "device/samsung/d2-common";
+#enableLowRam "device/samsung/d2spr";
+#enableLowRam "device/samsung/d2tmo";
+#enableLowRam "device/samsung/d2vzw";
+#enableLowRam "device/samsung/i9305";
+#enableLowRam "device/samsung/kona-common";
+#enableLowRam "device/samsung/msm8960-common";
+#enableLowRam "device/samsung/n5100";
+#enableLowRam "device/samsung/n5110";
+#enableLowRam "device/samsung/n5120";
 ##Tweaks for <4GB RAM devices
 #enableLowRam "device/htc/himaul";
 #enableLowRam "device/htc/himawl";
@@ -678,11 +719,14 @@ enableLowRam "device/samsung/n5120";
 [[ -d kernel/amazon/hdx-common ]] && sed -i "s/CONFIG_ASYMMETRIC_KEY_TYPE=y/# CONFIG_ASYMMETRIC_KEY_TYPE is not set/" kernel/amazon/hdx-common/arch/arm/configs/*defconfig; #Breaks on compile
 [[ -d kernel/asus/grouper ]] && sed -i "s/CONFIG_DEBUG_RODATA=y/# CONFIG_DEBUG_RODATA is not set/" kernel/asus/grouper/arch/arm/configs/grouper_defconfig; #Breaks on compile
 [[ -d kernel/lge/msm8992 ]] && awk -i inplace '!/STACKPROTECTOR/' kernel/lge/msm8992/arch/arm64/configs/lineageos_*_defconfig; #Breaks on compile
-[[ -d kernel/motorola/msm8992 ]] && sed -i "s/CONFIG_ARM_SMMU=y/# CONFIG_ARM_SMMU is not set/" kernel/motorola/msm8992/arch/arm64/configs/*defconfig; #Breaks on compile
+[[ -d kernel/motorola/msm8952 ]] && awk -i inplace '!/CC_STACKPROTECTOR_STRONG/' kernel/motorola/msm8952/arch/arm/configs/athene_defconfig; #Breaks on compile
 #tuna fixes
 awk -i inplace '!/nfc_enhanced.mk/' device/samsung/toro*/lineage.mk || true;
 awk -i inplace '!/TARGET_RECOVERY_UPDATER_LIBS/' device/samsung/toro*/BoardConfig.mk || true;
 awk -i inplace '!/TARGET_RELEASETOOLS_EXTENSIONS/' device/samsung/toro*/BoardConfig.mk || true;
+awk -i inplace '!/SDM/' vendor/samsung/toroplus/toroplus-vendor.mk || true;
+awk -i inplace '!/HiddenMenu/' vendor/samsung/toroplus/toroplus-vendor.mk || true;
+awk -i inplace '!/SecPhone/' vendor/samsung/toroplus/toroplus-vendor.mk || true;
 
 sed -i 's/^YYLTYPE yylloc;/extern YYLTYPE yylloc;/' kernel/*/*/scripts/dtc/dtc-lexer.l* || true; #Fix builds with GCC 10
 rm -v kernel/*/*/drivers/staging/greybus/tools/Android.mk || true;

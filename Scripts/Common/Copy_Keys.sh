@@ -56,6 +56,7 @@ if [ -d "$DOS_SIGNING_KEYS" ]; then
 	copyKey "beryllium" "kernel/xiaomi/sdm845";
 	copyKey "bluejay" "kernel/google/bluejay";
 	copyKey "bluejay" "kernel/google/gs101/private/gs-google";
+	copyKey "bluejay" "kernel/google/gs201/private/gs-google";
 	copyKey "blueline" "kernel/google/crosshatch";
 	copyKey "blueline" "kernel/google/msm-4.9";
 	copyKey "bonito" "kernel/google/bonito";
@@ -100,6 +101,7 @@ if [ -d "$DOS_SIGNING_KEYS" ]; then
 	copyKey "mermaid" "kernel/sony/sdm660";
 	copyKey "oneplus3" "kernel/oneplus/msm8996";
 	copyKey "oriole" "kernel/google/gs101/private/gs-google";
+	copyKey "oriole" "kernel/google/gs201/private/gs-google";
 	copyKey "oriole" "kernel/google/raviole";
 	copyKey "panther" "kernel/google/gs201/private/gs-google";
 	copyKey "pioneer" "kernel/sony/sdm660";
@@ -109,6 +111,7 @@ if [ -d "$DOS_SIGNING_KEYS" ]; then
 	copyKey "pro1x" "kernel/fxtec/sm6115";
 	copyKey "raphael" "kernel/xiaomi/sm8150";
 	copyKey "raven" "kernel/google/gs101/private/gs-google";
+	copyKey "raven" "kernel/google/gs201/private/gs-google";
 	copyKey "raven" "kernel/google/raviole";
 	copyKey "redfin" "kernel/google/redbull";
 	copyKey "sailfish" "kernel/google/marlin";
@@ -122,6 +125,7 @@ if [ -d "$DOS_SIGNING_KEYS" ]; then
 	copyKey "twolip" "kernel/xiaomi/sdm660";
 	copyKey "ursa" "kernel/xiaomi/sdm845";
 	copyKey "vayu" "kernel/xiaomi/sm8150";
+	copyKey "vayu" "kernel/xiaomi/vayu";
 	copyKey "voyager" "kernel/sony/sdm660";
 	copyKey "walleye" "kernel/google/wahoo";
 	copyKey "wayne" "kernel/xiaomi/sdm660";

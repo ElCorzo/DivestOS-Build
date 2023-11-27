@@ -23,7 +23,7 @@
 #General
 export DOS_WORKSPACE_ROOT="/mnt/dos/"; #XXX: THIS MUST BE CORRECT TO BUILD!
 #export DOS_BUILDS=$DOS_WORKSPACE_ROOT"Builds/";
-export DOS_BUILDS="/mnt/backup-1/DivestOS/Builds/"; #XXX: THIS MUST BE CORRECT TO BUILD!
+export DOS_BUILDS="/mnt/Storage-1/DivestOS/Builds/"; #XXX: THIS MUST BE CORRECT TO BUILD!
 export DOS_SIGNING_KEYS="$DOS_WORKSPACE_ROOT/Signing_Keys/4096pro";
 export DOS_SIGNING_GPG="$DOS_WORKSPACE_ROOT/Signing_Keys/gnupg";
 #export USE_CCACHE=1;
@@ -42,14 +42,15 @@ export DOS_DEBLOBBER_REMOVE_ACCESSORIES=true; #Set false to allow use of externa
 export DOS_DEBLOBBER_REMOVE_ATFWD=true; #Set true to remove basic ATFWD blobs
 export DOS_DEBLOBBER_REMOVE_AUDIOFX=true; #Set true to remove AudioFX
 export DOS_DEBLOBBER_REMOVE_APTX=false; #Set true to remove aptX Bluetooth codec
-export DOS_DEBLOBBER_REMOVE_CAMEXT=false; #Set true to remove camera extensions
 export DOS_DEBLOBBER_REMOVE_CNE=true; #Set true to remove all CNE blobs #XXX: Breaks Wi-Fi calling
 export DOS_DEBLOBBER_REMOVE_DPM=true; #Set true to remove all DPM blobs #XXX: Maybe breaks multi-sim and carrier aggregation (LTE+)
 export DOS_DEBLOBBER_REMOVE_DPP=false; #Set true to remove all Display Post Processing blobs #XXX: Breaks boot on select devices
+export DOS_DEBLOBBER_REMOVE_FACE=false; #Set true to remove all face unlock blobs
 export DOS_DEBLOBBER_REMOVE_FP=false; #Set true to remove all fingerprint reader blobs
 export DOS_DEBLOBBER_REMOVE_GRAPHICS=false; #Set true to remove all graphics blobs and use SwiftShader CPU renderer #TODO: Needs work
-export DOS_DEBLOBBER_REMOVE_EUICC=true; #Set true to remove all eUICC blobs
-export DOS_DEBLOBBER_REMOVE_IMS=false; #Set true to remove all IMS blobs XXX: Carriers are phasing out 3G, making IMS mandatory for calls
+export DOS_DEBLOBBER_REMOVE_EUICC=true; #Set true to remove all Google eUICC blobs
+export DOS_DEBLOBBER_REMOVE_EUICC_FULL=false; #Set true to remove all hardware eUICC blobs
+export DOS_DEBLOBBER_REMOVE_IMS=false; #Set true to remove all IMS blobs #XXX: Carriers are phasing out 3G, making IMS mandatory for calls
 export DOS_DEBLOBBER_REMOVE_IPA=false; #Set true to remove all IPA blobs
 export DOS_DEBLOBBER_REMOVE_IR=false; #Set true to remove all IR blobs
 export DOS_DEBLOBBER_REMOVE_RCS=true; #Set true to remove all RCS blobs
@@ -67,7 +68,8 @@ export DOS_HOSTS_BLOCKING=true; #Set false to prevent inclusion of a HOSTS file
 export DOS_HOSTS_BLOCKING_LIST="https://divested.dev/hosts-wildcards"; #Must be in the format "127.0.0.1 bad.domain.tld"
 export DOS_MICROG_SUPPORT=true; #Opt-in unprivileged microG support on 17.1+18.1+19.1+20.0
 export DOS_SENSORS_PERM=false; #Set true to provide a per-app sensors permission for 14.1/15.1 #XXX: can break things like camera
-export DOS_STRONG_ENCRYPTION_ENABLED=false; #Set true to enable AES 256-bit FDE encryption on 14.1+15.1 XXX: THIS WILL **DESTROY** EXISTING INSTALLS!
+export DOS_STRONG_ENCRYPTION_ENABLED=false; #Set true to enable AES 256-bit FDE encryption on 14.1+15.1 #XXX: THIS WILL **DESTROY** EXISTING INSTALLS!
+export DOS_USE_KSM=false; #Set true to use KSM for increased memory efficiency at the cost of easier side-channel attacks and increased CPU usage #XXX: testing only
 export DOS_WEBVIEW_LFS=true; #Whether to `git lfs pull` in the WebView repository
 #alias DOS_WEBVIEW_CHERRYPICK='git pull "https://github.com/LineageOS/android_external_chromium-webview" refs/changes/00/316600/2';
 
@@ -93,6 +95,7 @@ export DOS_BRANDING_BOOTANIMATION_STYLE="plasma"; #Options: gradient, plasma
 #export DOS_BRANDING_BOOTANIMATION_COLOR="#FF5722-#FF8A65"; #gradient
 export DOS_BRANDING_BOOTANIMATION_COLOR="#FF5722-#03A9F4"; #plasma
 export DOS_BRANDING_LINK_ABOUT="https://divestos.org/pages/about";
+export DOS_BRANDING_LINK_NEWS="https://divestos.org/pages/news";
 export DOS_BRANDING_LINK_PRIVACY="https://divestos.org/pages/privacy_policy";
 export DOS_BRANDING_SERVER_OTA="https://divestos.org/updater.php";
 export DOS_BRANDING_SERVER_OTA_ONION="$DOS_BRANDING_SERVER_OTA"; #TODO: need to handle allow cleartext
@@ -178,6 +181,8 @@ export GRADLE_OPTS="-Xmx2048m";
 export TZ=:/etc/localtime;
 export LC_ALL=C;
 export LANG=C.UTF-8;
+
+if [[ "$DOS_VERSION" != "LineageOS-20.0" ]]; then export DOS_DEBLOBBER_REMOVE_EUICC_FULL=true; fi;
 
 #START OF VERIFICATION
 gpgVerifyGitHead "$DOS_WORKSPACE_ROOT";

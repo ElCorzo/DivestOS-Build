@@ -13,6 +13,7 @@ git apply $DOS_PATCHES_LINUX_CVES/0006-AndroidHardening-Kernel_Hardening/ANY/000
 git apply $DOS_PATCHES_LINUX_CVES/0008-Graphene-Kernel_Hardening-misc/4.4/0016.patch
 #git apply $DOS_PATCHES_LINUX_CVES/0008-Graphene-Kernel_Hardening-slub/4.4/0002.patch
 git apply $DOS_PATCHES_LINUX_CVES/0009-rfc4941bis/ANY/0008.patch
+git apply $DOS_PATCHES_LINUX_CVES/0010-ksm_deferred_timers/3.4/0001.patch
 git apply $DOS_PATCHES_LINUX_CVES/0090-Unknown/ANY/0001.patch
 #git apply $DOS_PATCHES_LINUX_CVES/CVE-2017-18193/3.18/0002.patch
 #git apply $DOS_PATCHES_LINUX_CVES/CVE-2018-17972/3.18/0004.patch
@@ -27,11 +28,21 @@ git apply $DOS_PATCHES_LINUX_CVES/CVE-2019-2054/ANY/0003.patch
 #git apply $DOS_PATCHES_LINUX_CVES/CVE-2022-47929/4.4/0007.patch
 #git apply $DOS_PATCHES_LINUX_CVES/CVE-2023-0458/4.4/0001.patch
 #git apply $DOS_PATCHES_LINUX_CVES/CVE-2023-1073/4.4/0007.patch
+git apply $DOS_PATCHES_LINUX_CVES/CVE-2023-1989/^6.3/0002.patch
 git apply $DOS_PATCHES_LINUX_CVES/CVE-2023-3141/4.4/0001.patch
 git apply $DOS_PATCHES_LINUX_CVES/CVE-2023-3159/4.4/0001.patch
 git apply $DOS_PATCHES_LINUX_CVES/CVE-2023-3161/4.4/0001.patch
+git apply $DOS_PATCHES_LINUX_CVES/CVE-2023-3212/4.4/0008.patch
+git apply $DOS_PATCHES_LINUX_CVES/CVE-2023-3772/4.4/0008.patch
+git apply $DOS_PATCHES_LINUX_CVES/CVE-2023-4385/4.4/0001.patch
+git apply $DOS_PATCHES_LINUX_CVES/CVE-2023-4459/4.4/0001.patch
+git apply $DOS_PATCHES_LINUX_CVES/CVE-2023-4623/4.4/0008.patch
+git apply $DOS_PATCHES_LINUX_CVES/CVE-2023-31085/4.4/0008.patch
 git apply $DOS_PATCHES_LINUX_CVES/CVE-2023-32269/4.4/0001.patch
-editKernelLocalversion "-dos.p31"
+git apply $DOS_PATCHES_LINUX_CVES/CVE-2023-39192/4.4/0001.patch
+git apply $DOS_PATCHES_LINUX_CVES/CVE-2023-39193/4.4/0001.patch
+git apply $DOS_PATCHES_LINUX_CVES/CVE-2023-45862/4.4/0001.patch
+editKernelLocalversion "-dos.p42"
 else echo "kernel_lge_mako is unavailable, not patching.";
 fi;
 cd "$DOS_BUILD_BASE"

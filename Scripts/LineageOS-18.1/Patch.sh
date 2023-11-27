@@ -66,7 +66,7 @@ applyPatch "$DOS_PATCHES/android_bionic/0002-Graphene_Bionic_Hardening-1.patch";
 #applyPatch "$DOS_PATCHES/android_bionic/0002-Graphene_Bionic_Hardening-2.patch"; #Replace brk and sbrk with stubs (GrapheneOS) #XXX: some vendor blobs use sbrk
 #applyPatch "$DOS_PATCHES/android_bionic/0002-Graphene_Bionic_Hardening-3.patch"; #Use blocking getrandom and avoid urandom fallback (GrapheneOS) #XXX: some kernels do not have (working) getrandom
 applyPatch "$DOS_PATCHES/android_bionic/0002-Graphene_Bionic_Hardening-4.patch"; #Fix undefined out-of-bounds accesses in sched.h (GrapheneOS)
-applyPatch "$DOS_PATCHES/android_bionic/0002-Graphene_Bionic_Hardening-5.patch"; #Stop implicitly marking mappings as mergeable (GrapheneOS)
+if [ "$DOS_USE_KSM" = false ]; then applyPatch "$DOS_PATCHES/android_bionic/0002-Graphene_Bionic_Hardening-5.patch"; fi; #Stop implicitly marking mappings as mergeable (GrapheneOS)
 applyPatch "$DOS_PATCHES/android_bionic/0002-Graphene_Bionic_Hardening-6.patch"; #Replace VLA formatting with dprintf-like function (GrapheneOS)
 applyPatch "$DOS_PATCHES/android_bionic/0002-Graphene_Bionic_Hardening-7.patch"; #Increase default pthread stack to 8MiB on 64-bit (GrapheneOS)
 applyPatch "$DOS_PATCHES/android_bionic/0002-Graphene_Bionic_Hardening-8.patch"; #Make __stack_chk_guard read-only at runtime (GrapheneOS)
@@ -91,6 +91,7 @@ git revert --no-edit def3f14af17ae92192d2cc7d22349cabfa906fd6; #Re-enable the do
 applyPatch "$DOS_PATCHES/android_build/0001-Enable_fwrapv.patch"; #Use -fwrapv at a minimum (GrapheneOS)
 applyPatch "$DOS_PATCHES/android_build/0002-OTA_Keys.patch"; #Add correct keys to recovery for OTA verification (DivestOS)
 if [ "$DOS_GRAPHENE_EXEC" = true ]; then applyPatch "$DOS_PATCHES/android_build/0003-Exec_Based_Spawning.patch"; fi; #Add exec-based spawning support (GrapheneOS) #XXX: most devices override this
+applyPatch "$DOS_PATCHES_COMMON/android_build/0001-verity-openssl3.patch"; #Fix VB 1.0 failure due to openssl output format change
 sed -i '75i$(my_res_package): PRIVATE_AAPT_FLAGS += --auto-add-overlay' core/aapt2.mk; #Enable auto-add-overlay for packages, this allows the vendor overlay to easily work across all branches.
 awk -i inplace '!/updatable_apex.mk/' target/product/mainline_system.mk; #Disable APEX
 sed -i 's/PLATFORM_MIN_SUPPORTED_TARGET_SDK_VERSION := 23/PLATFORM_MIN_SUPPORTED_TARGET_SDK_VERSION := 28/' core/version_defaults.mk; #Set the minimum supported target SDK to Pie (GrapheneOS)
@@ -164,7 +165,8 @@ applyPatch "$DOS_PATCHES/android_frameworks_base/0020-Burnin_Protection.patch"; 
 applyPatch "$DOS_PATCHES/android_frameworks_base/0021-SUPL_Toggle.patch"; #Add a setting for forcibly disabling SUPL (GrapheneOS)
 applyPatch "$DOS_PATCHES/android_frameworks_base/0022-Allow_Disabling_NTP.patch"; #Dont ping ntp server when nitz time update is toggled off (GrapheneOS)
 applyPatch "$DOS_PATCHES/android_frameworks_base/0023-System_JobScheduler_Allowance.patch"; #DeviceIdleJobsController: don't ignore whitelisted system apps (GrapheneOS)
-if [ "$DOS_MICROG_SUPPORT" = true ]; then applyPatch "$DOS_PATCHES/android_frameworks_base/0024-Hardened-signature-spoofing.patch"; fi; #Hardened signature spoofing ability (DivestOS)
+if [ "$DOS_MICROG_SUPPORT" = true ]; then applyPatch "$DOS_PATCHES/android_frameworks_base/0024-Unprivileged_microG_Handling.patch"; fi; #Unprivileged microG handling (heavily based off of a CalyxOS patch)
+applyPatch "$DOS_PATCHES/android_frameworks_base/0025-tile_restrictions.patch"; #SystemUI: Require unlocking to use sensitive QS tiles (GrapheneOS)
 applyPatch "$DOS_PATCHES_COMMON/android_frameworks_base/0006-Do-not-throw-in-setAppOnInterfaceLocked.patch"; #Fix random reboots on broken kernels when an app has data restricted XXX: ugly (DivestOS)
 applyPatch "$DOS_PATCHES_COMMON/android_frameworks_base/0007-ABI_Warning.patch"; #Warn when running activity from 32 bit app on ARM64 devices. (AOSP)
 applyPatch "$DOS_PATCHES_COMMON/android_frameworks_base/0008-No_Crash_GSF.patch"; #Don't crash apps that depend on missing Gservices provider (GrapheneOS)
@@ -296,6 +298,11 @@ applyPatch "$DOS_PATCHES/android_packages_apps_LineageParts/0001-Remove_Analytic
 cp -f "$DOS_PATCHES_COMMON/contributors.db" assets/contributors.db; #Update contributors cloud
 fi;
 
+if enterAndClear "packages/apps/Messaging"; then
+applyPatch "$DOS_PATCHES_COMMON/android_packages_apps_Messaging/0001-null-fix.patch"; #Handle null case (GrapheneOS)
+applyPatch "$DOS_PATCHES_COMMON/android_packages_apps_Messaging/0002-missing-channels.patch"; #Add notification channels where missing (LineageOS)
+fi;
+
 if enterAndClear "packages/apps/Nfc"; then
 if [ "$DOS_GRAPHENE_CONSTIFY" = true ]; then applyPatch "$DOS_PATCHES/android_packages_apps_Nfc/0001-constify_JNINativeMethod.patch"; fi; #Constify JNINativeMethod tables (GrapheneOS)
 fi;
@@ -328,7 +335,7 @@ applyPatch "$DOS_PATCHES/android_packages_apps_Settings/0013-LTE_Only_Mode-1.pat
 applyPatch "$DOS_PATCHES/android_packages_apps_Settings/0013-LTE_Only_Mode-2.patch"; #Show preferred network options no matter the carrier configuration (GrapheneOS)
 applyPatch "$DOS_PATCHES/android_packages_apps_Settings/0013-LTE_Only_Mode-3.patch"; #Add LTE only entry when carrier enables world mode (GrapheneOS)
 applyPatch "$DOS_PATCHES/android_packages_apps_Settings/0014-SUPL_Toggle.patch"; #Add a toggle for forcibly disabling SUPL (GrapheneOS)
-if [ "$DOS_MICROG_SUPPORT" = true ]; then applyPatch "$DOS_PATCHES/android_packages_apps_Settings/0015-signature_spoofing_toggle.patch"; fi; #Add a toggle to opt-in to restricted signature spoofing (heavily based off of a GrapheneOS patch)
+if [ "$DOS_MICROG_SUPPORT" = true ]; then applyPatch "$DOS_PATCHES/android_packages_apps_Settings/0015-microG_Toggle.patch"; fi; #Add a toggle for microG enablement (heavily based off of a GrapheneOS patch)
 applyPatch "$DOS_PATCHES_COMMON/android_packages_apps_Settings/0001-disable_apps.patch"; #Add an ability to disable non-system apps from the "App info" screen (GrapheneOS)
 sed -i 's/if (isFullDiskEncrypted()) {/if (false) {/' src/com/android/settings/accessibility/*AccessibilityService*.java; #Never disable secure start-up when enabling an accessibility service
 fi;
@@ -355,6 +362,7 @@ applyPatch "$DOS_PATCHES_COMMON/android_packages_inputmethods_LatinIME/0002-Disa
 fi;
 
 if enterAndClear "packages/modules/DnsResolver"; then
+#applyPatch "$DOS_PATCHES/android_packages_modules_DnsResolver/0003-Reuse-align_ptr-in-hosts_cache.patch"; #Reuse align_ptr in hosts_cache (danielk43)
 applyPatch "$DOS_PATCHES/android_packages_modules_DnsResolver/0001-hosts_toggle.patch"; #Add a toggle to disable /etc/hosts lookup (DivestOS)
 fi;
 
@@ -440,6 +448,8 @@ awk -i inplace '!/Eleven/' config/common_mobile.mk; #Remove Music Player
 awk -i inplace '!/Email/' config/common_mobile.mk; #Remove Email
 awk -i inplace '!/Exchange2/' config/common_mobile.mk;
 cp -f "$DOS_PATCHES_COMMON/config_webview_packages.xml" overlay/common/frameworks/base/core/res/res/xml/config_webview_packages.xml; #Change allowed WebView providers
+awk -i inplace '!/com.android.vending/' overlay/common/frameworks/base/core/res/res/values/vendor_required_apps*.xml; #Remove unwanted apps
+awk -i inplace '!/com.google.android/' overlay/common/frameworks/base/core/res/res/values/vendor_required_apps*.xml;
 fi;
 
 if enter "vendor/divested"; then
@@ -461,6 +471,10 @@ echo "allow camera system_data_root_file:dir rw_dir_perms;" >> sepolicy/vendor/c
 echo "allow camera system_data_root_file:sock_file { create unlink write setattr };" >> sepolicy/vendor/camera.te;
 echo "allow cameraserver sysfs_soc:dir r_dir_perms;" >> sepolicy/vendor/cameraserver.te;
 echo "allow cameraserver sysfs_soc:file r_file_perms;" >> sepolicy/vendor/cameraserver.te;
+fi;
+
+if enterAndClear "device/asus/debx"; then
+compressRamdisks;
 fi;
 
 if enterAndClear "device/google/marlin"; then
@@ -489,6 +503,13 @@ echo "allow hwaddrs self:capability { fowner };" >> sepolicy/hwaddrs.te;
 echo "allow hwaddrs block_device:lnk_file { open };" >> sepolicy/hwaddrs.te;
 echo "allow hwaddrs misc_block_device:blk_file { open read };" >> sepolicy/hwaddrs.te;
 sed -i '1itypeattribute wcnss_service misc_block_device_exception;' sepolicy/wcnss_service.te;
+fi;
+
+if enterAndClear "device/lge/hammerhead"; then
+awk -i inplace '!/TARGET_RELEASETOOLS_EXTENSIONS/' BoardConfig.mk; #broken releasetools
+awk -i inplace '!/PRODUCT_DISABLE_SCUDO/' device.mk; #don't disable scudo
+rm setup-makefiles.sh; #index is broken
+rm -rfv timekeep;
 fi;
 
 if enterAndClear "device/lge/mako"; then
@@ -546,14 +567,6 @@ echo "TARGET_RECOVERY_DENSITY := hdpi" >> BoardConfigCommon.mk;
 echo "allow hal_gnss_default ssr_device:chr_file { open read };" >> sepolicy/common/hal_gnss_default.te;
 fi;
 
-if enterAndClear "device/zuk/msm8996-common"; then
-awk -i inplace '!/WfdCommon/' msm8996.mk; #fix breakage
-fi;
-
-if enterAndClear "kernel/google/marlin"; then
-git revert --no-edit a17f0cc9d8f16df52d3cf3ff64b37bf477f589e5; #enable verity on /vendor
-fi;
-
 #Make changes to all devices
 cd "$DOS_BUILD_BASE";
 find "hardware/qcom/gps" -name "gps\.conf" -type f -print0 | xargs -0 -n 1 -P 4 -I {} bash -c 'hardenLocationConf "{}"';
@@ -586,6 +599,7 @@ enableLowRam "device/samsung/serranoltexx" "serranoltexx";
 enableLowRam "device/samsung/serranodsdd" "serranodsdd";
 #Tweaks for <3GB RAM devices
 enableLowRam "device/asus/flox" "flox";
+enableLowRam "device/asus/debx" "debx";
 enableLowRam "device/fairphone/FP2" "FP2";
 enableLowRam "device/htc/m8-common" "m8-common";
 enableLowRam "device/htc/m8" "m8";
@@ -596,6 +610,7 @@ enableLowRam "device/lge/d801" "d801";
 enableLowRam "device/lge/d802" "d802";
 enableLowRam "device/lge/d803" "d803";
 enableLowRam "device/lge/g2-common" "g2-common";
+enableLowRam "device/lge/hammerhead" "hammerhead";
 enableLowRam "device/lge/mako" "mako";
 enableLowRam "device/motorola/victara" "victara";
 enableLowRam "device/samsung/jf-common" "jf-common";
@@ -611,19 +626,17 @@ enableLowRam "device/samsung/hlte-common" "hlte-common";
 enableLowRam "device/samsung/hlte" "hlte";
 enableLowRam "device/samsung/msm8974-common" "msm8974-common";
 #Tweaks for 2GB/3GB RAM devices
-enableLowRam "device/lge/d850" "d850";
-enableLowRam "device/lge/d851" "d851";
-enableLowRam "device/lge/d852" "d852";
-enableLowRam "device/lge/d855" "d855";
+#enableLowRam "device/lge/d850" "d850";
+#enableLowRam "device/lge/d851" "d851";
+#enableLowRam "device/lge/d852" "d852";
+#enableLowRam "device/lge/d855" "d855";
 #Tweaks for <4GB RAM devices
-enableLowRam "device/lge/f400" "f400";
-enableLowRam "device/lge/ls990" "ls990";
-enableLowRam "device/lge/vs985" "vs985";
-enableLowRam "device/moto/shamu" "shamu";
-enableLowRam "device/nextbit/ether" "ether";
-enableLowRam "device/oneplus/bacon" "bacon";
-#Tweaks for 3GB/4GB RAM devices
-#enableLowRam "device/zuk/z2_plus" "z2_plus";
+#enableLowRam "device/lge/f400" "f400";
+#enableLowRam "device/lge/ls990" "ls990";
+#enableLowRam "device/lge/vs985" "vs985";
+#enableLowRam "device/moto/shamu" "shamu";
+#enableLowRam "device/nextbit/ether" "ether";
+#enableLowRam "device/oneplus/bacon" "bacon";
 #Tweaks for 4GB RAM devices
 #enableLowRam "device/google/marlin" "marlin";
 #enableLowRam "device/google/marlin" "sailfish";
@@ -647,9 +660,13 @@ enableLowRam "device/oneplus/bacon" "bacon";
 [[ -d kernel/oneplus/msm8996 ]] && sed -i "s/CONFIG_STRICT_MEMORY_RWX=y/# CONFIG_STRICT_MEMORY_RWX is not set/" kernel/oneplus/msm8996/arch/arm64/configs/lineageos_*_defconfig; #Breaks on compile
 
 sed -i 's/^YYLTYPE yylloc;/extern YYLTYPE yylloc;/' kernel/*/*/scripts/dtc/dtc-lexer.l* || true; #Fix builds with GCC 10
+sed -i 's/^extern YYLTYPE yylloc;/YYLTYPE yylloc;/' kernel/oneplus/msm8996/scripts/dtc/dtc-lexer.l* || true; #Unbreak
 rm -v kernel/*/*/drivers/staging/greybus/tools/Android.mk || true;
 awk -i inplace '!/config_wifi_batched_scan_supported/' device/*/*/overlay/frameworks/opt/net/wifi/service/res/values/config.xml &>/dev/null || true; #deprecated
 awk -i inplace '!/config_wifi_batched_scan_supported/' device/*/*/overlay/frameworks/base/core/res/res/values/config.xml &>/dev/null || true; #deprecated
+awk -i inplace '!/UpdateSetting/' vendor/lge/hammerhead/hammerhead-vendor.mk || true;
+awk -i inplace '!/SprintHiddenMenu/' vendor/lge/hammerhead/hammerhead-vendor.mk || true;
+awk -i inplace '!/OmaDmclient/' vendor/lge/hammerhead/hammerhead-vendor.mk || true;
 #
 #END OF DEVICE CHANGES
 #

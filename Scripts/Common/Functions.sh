@@ -23,7 +23,8 @@ export -f startPatcher;
 
 resetWorkspace() {
 	umask 0022;
-	repo forall -c 'git add -A && git reset --hard' && rm -rf out DOS_PATCHED_FLAG && repo sync -j8 --force-sync --detach;
+	if [ "$1" == "local" ]; then local noNetwork="--local-only"; fi;
+	repo forall -c 'git add -A && git reset --hard' && rm -rf out DOS_PATCHED_FLAG && repo sync --jobs-network=6 --jobs-checkout=12 --force-sync --detach $noNetwork;
 }
 export -f resetWorkspace;
 
@@ -346,7 +347,6 @@ processRelease() {
 	"$RELEASETOOLS_PREFIX"ota_from_target_files $BLOCK_SWITCHES -k "$KEY_DIR/releasekey" \
 		"$OUT_DIR/$PREFIX-target_files.zip" \
 		"$OUT_DIR/$PREFIX-ota.zip";
-	md5sum "$OUT_DIR/$PREFIX-ota.zip" > "$OUT_DIR/$PREFIX-ota.zip.md5sum";
 	sha512sum "$OUT_DIR/$PREFIX-ota.zip" > "$OUT_DIR/$PREFIX-ota.zip.sha512sum";
 
 	#Deltas
@@ -379,9 +379,9 @@ processRelease() {
 	fi;
 
 	#File name fixes
-	sed -i "s|$OUT_DIR/||" $OUT_DIR/*.md5sum $OUT_DIR/*.sha512sum;
-	sed -i 's/-ota\././' $OUT_DIR/*.md5sum $OUT_DIR/*.sha512sum;
-	sed -i 's/-incremental_/-/' $OUT_DIR/*.md5sum $OUT_DIR/*.sha512sum;
+	sed -i "s|$OUT_DIR/||" $OUT_DIR/*.sha512sum;
+	sed -i 's/-ota\././' $OUT_DIR/*.sha512sum;
+	sed -i 's/-incremental_/-/' $OUT_DIR/*.sha512sum;
 
 	#GPG signing
 	if [ "$DOS_GPG_SIGNING" = true ]; then
@@ -403,10 +403,10 @@ processRelease() {
 		mkdir -vp $ARCHIVE/fastboot;
 		mkdir -vp $ARCHIVE/incrementals;
 
-		cp -v $OUT_DIR/$PREFIX-fastboot.zip* $ARCHIVE/fastboot/ || true;
 		cp -v $OUT_DIR/$PREFIX-ota.zip* $ARCHIVE/ || true;
-		cp -v $OUT_DIR/$PREFIX-recovery.img* $ARCHIVE/ || true;
 		rename -- "-ota." "." $ARCHIVE/$PREFIX-ota.zip*;
+		if [ "$hasRecoveryImg" == "1" ] || [ "$hasDtboImg" == "0" ]; then cp -v $OUT_DIR/$PREFIX-fastboot.zip* $ARCHIVE/fastboot/ || true; fi;
+		if [ "$hasRecoveryImg" == "0" ] && [ "$hasDtboImg" == "1" ]; then cp -v $OUT_DIR/$PREFIX-recovery.img* $ARCHIVE/ || true; fi;
 		if [ "$DOS_GENERATE_DELTAS" = true ]; then
 			if [[ " ${DOS_GENERATE_DELTAS_DEVICES[@]} " =~ " ${DEVICE} " ]]; then
 				cp -v $OUT_DIR/$PREFIX-target_files.zip* $ARCHIVE/target_files/ || true;
@@ -614,15 +614,13 @@ export -f hardenLocationFWB;
 hardenUserdata() {
 	cd "$DOS_BUILD_BASE/$1";
 
-	#awk -i inplace '!/f2fs/' *fstab* */*fstab* */*/*fstab* &>/dev/null || true;
-
 	#Remove latemount to allow selinux contexts be restored upon /cache wipe
 	#Fixes broken OTA updater and broken /recovery updater
 	sed -i '/\/cache/s|latemount,||' *fstab* */*fstab* */*/*fstab* &>/dev/null || true;
 
 	#TODO: Ensure: noatime,nosuid,nodev
 	sed -i '/\/data/{/discard/!s|nosuid|discard,nosuid|}' *fstab* */*fstab* */*/*fstab* &>/dev/null || true;
-	if [ "$1" != "device/samsung/tuna" ] && [ "$1" != "device/amazon/hdx-common" ]; then #tuna needs first boot to init, hdx-c has broken encryption
+	if [ "$1" != "device/samsung/tuna" ] && [ "$1" != "device/amazon/hdx-common" ] && [ "$1" != "device/motorola/athene" ]; then #tuna needs first boot to init, hdx-c has broken encryption
 		sed -i 's|encryptable=/|forceencrypt=/|' *fstab* */*fstab* */*/*fstab* &>/dev/null || true;
 	fi;
 	echo "Hardened /data for $1";
@@ -634,7 +632,7 @@ enableAutoVarInit() {
 	#grep TARGET_KERNEL_CLANG_COMPILE Build/*/device/*/*/*.mk -l
 	#but exclude: grep INIT_STACK_ALL_ZERO Build/*/kernel/*/*/security/Kconfig.hardening -l
 	#already supported: fairphone/sm7225, fxtec/sm6115, google/bluejay, google/gs101, google/gs201, google/msm-4.14, google/raviole, google/redbull, oneplus/sm8250, oneplus/sm8350
-	local DOS_AUTOVARINIT_KERNELS=('essential/msm8998' 'fairphone/sdm632' 'fxtec/msm8998' 'google/coral' 'google/msm-4.9' 'google/sunfish' 'google/wahoo' 'oneplus/msm8996' 'oneplus/msm8998' 'oneplus/sdm845' 'oneplus/sm7250' 'oneplus/sm8150' 'razer/msm8998' 'razer/sdm845' 'samsung/exynos9810' 'samsung/universal9810' 'sony/sdm660' 'sony/sdm845' 'xiaomi/msm8937' 'xiaomi/sdm660' 'xiaomi/sdm845' 'xiaomi/sm6150' 'xiaomi/sm8150' 'xiaomi/sm8250' 'zuk/msm8996');
+	local DOS_AUTOVARINIT_KERNELS=('essential/msm8998' 'fairphone/sdm632' 'fxtec/msm8998' 'google/coral' 'google/msm-4.9' 'google/sunfish' 'google/wahoo' 'oneplus/msm8996' 'oneplus/msm8998' 'oneplus/sdm845' 'oneplus/sm7250' 'oneplus/sm8150' 'razer/msm8998' 'razer/sdm845' 'samsung/exynos9810' 'samsung/universal9810' 'sony/sdm660' 'sony/sdm845' 'xiaomi/msm8937' 'xiaomi/sdm660' 'xiaomi/sdm845' 'xiaomi/sm6150' 'xiaomi/sm8150' 'xiaomi/vayu' 'xiaomi/sm8250' 'zuk/msm8996');
 	cd "$DOS_BUILD_BASE";
 	echo "auto-var-init: Starting!";
 	for kernel in "${DOS_AUTOVARINIT_KERNELS[@]}"
@@ -676,8 +674,9 @@ updateRegDb() {
 	#Latest database cannot be used due to differing flags, only update supported kernels
 	#md5sum Build/*/kernel/*/*/net/wireless/genregdb.awk | sort
 	if echo "d9ef5910b573c634fa7845bb6511ba89  net/wireless/genregdb.awk" | md5sum --check --quiet &>/dev/null; then
-		cp "$DOS_PATCHES_COMMON/wireless-regdb/db.txt" "net/wireless/db.txt";
-		echo "regdb: updated for $1";
+		#cp "$DOS_PATCHES_COMMON/wireless-regdb/db.txt" "net/wireless/db.txt";
+		#echo "regdb: updated for $1";
+		echo "regdb: skipping regdb update for $1";
 	fi;
 	cd "$DOS_BUILD_BASE";
 }
@@ -722,6 +721,27 @@ disableAPEX() {
 	cd "$DOS_BUILD_BASE";
 }
 export -f disableAPEX;
+
+includeOE() {
+	cd "$DOS_BUILD_BASE/$1";
+	#Skip: Pixel 2 series (only supports Google Fi), Pixel 3/a series (broken on 20.0)
+	if [[ "$1" != *"device/google/bonito"* ]] && [[ "$1" != *"device/google/crosshatch"* ]] && [[ "$1" != *"device/google/wahoo"* ]]; then
+		if [ -f device.mk ]; then
+			if grep -sq "euicc.xml" device.mk; then
+				echo -e "\nPRODUCT_PACKAGES += OpenEUICC" >> device.mk;
+				echo "Enabled OpenEUICC inclusion for $1";
+			fi;
+		fi;
+		if [ -f device-lineage.mk ]; then
+			if grep -sq "euicc.xml" device-lineage.mk; then
+				echo -e "\nPRODUCT_PACKAGES += OpenEUICC" >> device-lineage.mk;
+				echo "Enabled OpenEUICC inclusion for $1";
+			fi;
+		fi;
+	fi;
+	cd "$DOS_BUILD_BASE";
+}
+export -f includeOE;
 
 enableStrongEncryption() {
 	cd "$DOS_BUILD_BASE/$1";
@@ -876,7 +896,7 @@ getDefconfig() {
 	else
 		#grep TARGET_KERNEL_CONFIG Build/*/device/ -Rih | sed 's|TARGET_KERNEL_CONFIG .= |arch/arm\*/configs/|' | grep -v lineage | sort -u
 		#grep TARGET_KERNEL_VARIANT_CONFIG Build/*/device/ -Rih | sed 's|TARGET_KERNEL_VARIANT_CONFIG .= |arch/arm\*/configs/|' | grep -v lineage | sort -u
-		local defconfigPath="arch/arm*/configs/lineage*defconfig arch/arm*/configs/vendor/lineage*defconfig arch/arm*/configs/apollo_defconfig arch/arm*/configs/apq8084_sec_defconfig arch/arm*/configs/apq8084_sec_kccat6_eur_defconfig arch/arm*/configs/apq8084_sec_lentislte_skt_defconfig arch/arm*/configs/aura_defconfig arch/arm*/configs/b1c1_defconfig arch/arm*/configs/beryllium_defconfig arch/arm*/configs/bonito_defconfig arch/arm*/configs/clark_defconfig arch/arm*/configs/cloudripper_gki_defconfig arch/arm*/configs/discovery_defconfig arch/arm*/configs/enchilada_defconfig arch/arm*/configs/exynos8890-hero2lte_defconfig arch/arm*/configs/exynos8890-herolte_defconfig arch/arm*/configs/exynos9810-crownlte_defconfig arch/arm*/configs/exynos9810-star2lte_defconfig arch/arm*/configs/exynos9810-starlte_defconfig arch/arm*/configs/floral_defconfig arch/arm*/configs/FP4_defconfig arch/arm*/configs/griffin_defconfig arch/arm*/configs/grouper_defconfig arch/arm*/configs/harpia_defconfig arch/arm*/configs/jactive_eur_defconfig arch/arm*/configs/jf_att_defconfig arch/arm*/configs/jf_eur_defconfig arch/arm*/configs/jf_spr_defconfig arch/arm*/configs/jfve_eur_defconfig arch/arm*/configs/jf_vzw_defconfig arch/arm*/configs/kirin_defconfig arch/arm*/configs/lavender_defconfig arch/arm*/configs/m1s1_defconfig arch/arm*/configs/m7_defconfig arch/arm*/configs/m8_defconfig arch/arm*/configs/m8dug_defconfig arch/arm*/configs/merlin_defconfig arch/arm*/configs/mermaid_defconfig arch/arm*/configs/msm8930_serrano_eur_3g_defconfig arch/arm*/configs/msm8930_serrano_eur_lte_defconfig arch/arm*/configs/msm8974-hdx_defconfig arch/arm*/configs/msm8974-hdx-perf_defconfig arch/arm*/configs/oneplus2_defconfig arch/arm*/configs/osprey_defconfig arch/arm*/configs/pioneer_defconfig arch/arm*/configs/platina_defconfig arch/arm*/configs/redbull_defconfig arch/arm*/configs/samsung_serrano_defconfig arch/arm*/configs/samsung_serrano_usa_defconfig arch/arm*/configs/shamu_defconfig arch/arm*/configs/slider_gki_defconfig arch/arm*/configs/sunfish_defconfig arch/arm*/configs/surnia_defconfig arch/arm*/configs/tama_akari_defconfig arch/arm*/configs/tama_akatsuki_defconfig arch/arm*/configs/tama_apollo_defconfig arch/arm*/configs/tama_aurora_defconfig arch/arm*/configs/thor_defconfig arch/arm*/configs/tulip_defconfig arch/arm*/configs/tuna_defconfig arch/arm*/configs/twrp_defconfig arch/arm*/configs/vendor/alioth_defconfig arch/arm*/configs/vendor/apollo_defconfig arch/arm*/configs/vendor/fairphone/FP4.config arch/arm*/configs/vendor/kona-perf_defconfig arch/arm*/configs/vendor/lahaina-qgki_defconfig arch/arm*/configs/vendor/lito-perf_defconfig arch/arm*/configs/vendor/lmi_defconfig arch/arm*/configs/vendor/raphael_defconfig arch/arm*/configs/vendor/sm8150-perf_defconfig arch/arm*/configs/vendor/vayu_defconfig arch/arm*/configs/vendor/xiaomi/alioth.config arch/arm*/configs/vendor/xiaomi/beryllium.config arch/arm*/configs/vendor/xiaomi/dipper.config arch/arm*/configs/vendor/xiaomi/equuleus.config arch/arm*/configs/vendor/xiaomi/lmi.config arch/arm*/configs/vendor/xiaomi/mi845_defconfig arch/arm*/configs/vendor/xiaomi-msm8937/optional/latest-camera-stack.config arch/arm*/configs/vendor/xiaomi/polaris.config arch/arm*/configs/vendor/xiaomi/sm8250-common.config arch/arm*/configs/vendor/xiaomi/ursa.config arch/arm*/configs/voyager_defconfig arch/arm*/configs/wayne_defconfig arch/arm*/configs/whyred_defconfig arch/arm*/configs/yellowstone_defconfig arch/arm*/configs/Z00T_defconfig arch/arm*/configs/z2_plus_defconfig arch/arm*/configs/zenfone3-perf_defconfig";
+		local defconfigPath="arch/arm*/configs/lineage*defconfig arch/arm*/configs/vendor/lineage*defconfig arch/arm*/configs/apollo_defconfig arch/arm*/configs/apq8084_sec_defconfig arch/arm*/configs/apq8084_sec_kccat6_eur_defconfig arch/arm*/configs/apq8084_sec_lentislte_skt_defconfig arch/arm*/configs/athene_defconfig arch/arm*/configs/aura_defconfig arch/arm*/configs/b1c1_defconfig arch/arm*/configs/beryllium_defconfig arch/arm*/configs/bonito_defconfig arch/arm*/configs/clark_defconfig arch/arm*/configs/cloudripper_gki_defconfig arch/arm*/configs/discovery_defconfig arch/arm*/configs/enchilada_defconfig arch/arm*/configs/exynos8890-hero2lte_defconfig arch/arm*/configs/exynos8890-herolte_defconfig arch/arm*/configs/exynos9810-crownlte_defconfig arch/arm*/configs/exynos9810-star2lte_defconfig arch/arm*/configs/exynos9810-starlte_defconfig arch/arm*/configs/floral_defconfig arch/arm*/configs/FP4_defconfig arch/arm*/configs/griffin_defconfig arch/arm*/configs/grouper_defconfig arch/arm*/configs/harpia_defconfig arch/arm*/configs/jactive_eur_defconfig arch/arm*/configs/jf_att_defconfig arch/arm*/configs/jf_eur_defconfig arch/arm*/configs/jf_spr_defconfig arch/arm*/configs/jfve_eur_defconfig arch/arm*/configs/jf_vzw_defconfig arch/arm*/configs/kirin_defconfig arch/arm*/configs/lavender_defconfig arch/arm*/configs/m1s1_defconfig arch/arm*/configs/m7_defconfig arch/arm*/configs/m8_defconfig arch/arm*/configs/m8dug_defconfig arch/arm*/configs/merlin_defconfig arch/arm*/configs/mermaid_defconfig arch/arm*/configs/msm8930_serrano_eur_3g_defconfig arch/arm*/configs/msm8930_serrano_eur_lte_defconfig arch/arm*/configs/msm8974-hdx_defconfig arch/arm*/configs/msm8974-hdx-perf_defconfig arch/arm*/configs/oneplus2_defconfig arch/arm*/configs/osprey_defconfig arch/arm*/configs/pioneer_defconfig arch/arm*/configs/platina_defconfig arch/arm*/configs/redbull_defconfig arch/arm*/configs/samsung_serrano_defconfig arch/arm*/configs/samsung_serrano_usa_defconfig arch/arm*/configs/shamu_defconfig arch/arm*/configs/slider_gki_defconfig arch/arm*/configs/sunfish_defconfig arch/arm*/configs/surnia_defconfig arch/arm*/configs/tama_akari_defconfig arch/arm*/configs/tama_akatsuki_defconfig arch/arm*/configs/tama_apollo_defconfig arch/arm*/configs/tama_aurora_defconfig arch/arm*/configs/thor_defconfig arch/arm*/configs/tulip_defconfig arch/arm*/configs/tuna_defconfig arch/arm*/configs/twrp_defconfig arch/arm*/configs/vendor/alioth_defconfig arch/arm*/configs/vendor/apollo_defconfig arch/arm*/configs/vendor/davinci.config arch/arm*/configs/vendor/fairphone/FP4.config arch/arm*/configs/vendor/kona-perf_defconfig arch/arm*/configs/vendor/lahaina-qgki_defconfig arch/arm*/configs/vendor/lito-perf_defconfig arch/arm*/configs/vendor/lmi_defconfig arch/arm*/configs/vendor/msm8937-perf_defconfig arch/arm*/configs/vendor/raphael_defconfig arch/arm*/configs/vendor/sdmsteppe-perf_defconfig arch/arm*/configs/vendor/sm8150-perf_defconfig arch/arm*/configs/vendor/vayu_defconfig arch/arm*/configs/vendor/vendor/fairphone/FP4.config arch/arm*/configs/vendor/vendor/xiaomi/sm8250-common.config arch/arm*/configs/vendor/xiaomi/alioth.config arch/arm*/configs/vendor/xiaomi/apollo.config arch/arm*/configs/vendor/xiaomi/beryllium.config arch/arm*/configs/vendor/xiaomi/dipper.config arch/arm*/configs/vendor/xiaomi/equuleus.config arch/arm*/configs/vendor/xiaomi/lmi.config arch/arm*/configs/vendor/xiaomi/mi845_defconfig arch/arm*/configs/vendor/xiaomi/polaris.config arch/arm*/configs/vendor/xiaomi/sm8150-common.config arch/arm*/configs/vendor/xiaomi/sm8250-common.config arch/arm*/configs/vendor/xiaomi/ursa.config arch/arm*/configs/vendor/xiaomi/vayu.config arch/arm*/configs/voyager_defconfig arch/arm*/configs/wayne_defconfig arch/arm*/configs/whyred_defconfig arch/arm*/configs/yellowstone_defconfig arch/arm*/configs/Z00T_defconfig arch/arm*/configs/z2_plus_defconfig arch/arm*/configs/zenfone3-perf_defconfig";
 	fi;
 	echo $defconfigPath;
 }
@@ -901,6 +921,18 @@ hardenDefconfig() {
 	optionsYes+=("DEBUG_KERNEL" "DEBUG_CREDENTIALS" "DEBUG_LIST" "DEBUG_VIRTUAL");
 	optionsYes+=("DEBUG_RODATA" "DEBUG_SET_MODULE_RONX");
 	#optionsYes+=("DEBUG_SG"); #bootloops - https://patchwork.kernel.org/patch/8989981
+
+	if [ "$DOS_USE_KSM" = true ] && [ -f "mm/ksm.c" ]; then
+		if [[ $kernelVersion == "3."* ]] || [[ $kernelVersion == "4.4"* ]] || [[ $kernelVersion == "4.9"* ]]; then
+			optionsYes+=("KSM");
+			sed -i 's/unsigned int ksm_run = KSM_RUN_STOP;/unsigned int ksm_run = KSM_RUN_MERGE;/' mm/ksm.c &>/dev/null || true;
+			sed -i 's/unsigned long ksm_run = KSM_RUN_STOP;/unsigned long ksm_run = KSM_RUN_MERGE;/' mm/ksm.c &>/dev/null || true;
+		else
+			local ksmNotNeeded=true;
+			sed -i 's/unsigned int ksm_run = KSM_RUN_MERGE;/unsigned int ksm_run = KSM_RUN_STOP;/' mm/ksm.c &>/dev/null || true;
+			sed -i 's/unsigned long ksm_run = KSM_RUN_MERGE;/unsigned long ksm_run = KSM_RUN_STOP;/' mm/ksm.c &>/dev/null || true;
+		fi;
+	fi;
 
 	if [[ $kernelVersion == "3."* ]] || [[ $kernelVersion == "4.4"* ]] || [[ $kernelVersion == "4.9"* ]]; then
 		optionsYes+=("DEBUG_NOTIFIERS"); #(https://github.com/GrapheneOS/os-issue-tracker/issues/681)
@@ -1021,7 +1053,7 @@ hardenDefconfig() {
 	optionsYes+=("HID_GENERIC" "HID_STEAM" "HID_SONY" "HID_WIIMOTE" "INPUT_JOYSTICK" "JOYSTICK_XPAD" "USB_USBNET" "USB_NET_CDCETHER");
 
 	#grep INIT_ON_ALLOC_DEFAULT_ON Build/*/kernel/*/*/security/Kconfig.hardening -l
-	modernKernels=('fairphone/sm7225' 'fxtec/sm6115' 'google/barbet' 'google/bluejay' 'google/coral' 'google/gs101' 'google/gs201' 'google/msm-4.14' 'google/raviole' 'google/redbull' 'google/sunfish' 'oneplus/sm8150' 'oneplus/sm8250' 'oneplus/sm8350' 'xiaomi/sm8150' 'xiaomi/sm8250');
+	modernKernels=('fairphone/sm7225' 'fxtec/sm6115' 'google/barbet' 'google/bluejay' 'google/coral' 'google/gs101' 'google/gs201' 'google/msm-4.14' 'google/raviole' 'google/redbull' 'google/sunfish' 'oneplus/sm8150' 'oneplus/sm8250' 'oneplus/sm8350' 'xiaomi/sm8150' 'xiaomi/sm8250' 'xiaomi/vayu');
 	for kernelModern in "${modernKernels[@]}"; do
 		if [[ "$1" == *"/$kernelModern"* ]]; then
 			optionsYes+=("INIT_ON_ALLOC_DEFAULT_ON" "INIT_ON_FREE_DEFAULT_ON");
@@ -1082,7 +1114,8 @@ hardenDefconfig() {
 	optionsNo+=("BLK_DEV_FD" "BT_HS" "IO_URING" "IP_DCCP" "IP_SCTP" "VIDEO_VIVID" "FB_VIRTUAL" "RDS" "RDS_TCP");
 	optionsNo+=("HIBERNATION");
 	optionsNo+=("KEXEC" "KEXEC_FILE");
-	optionsNo+=("KSM" "UKSM");
+	optionsNo+=("UKSM");
+	if [ "$DOS_USE_KSM" = false ] || [ "$ksmNotNeeded" = true ]; then optionsNo+=("KSM"); fi;
 	optionsNo+=("LIVEPATCH");
 	optionsNo+=("WIREGUARD"); #Requires root access, which we do not provide
 	if [ "$DOS_DEBLOBBER_REMOVE_IPA" = true ]; then optionsNo+=("IPA" "RMNET_IPA"); fi;
@@ -1090,7 +1123,7 @@ hardenDefconfig() {
 	optionsNo+=("GCC_PLUGIN_RANDSTRUCT_PERFORMANCE");
 	optionsNo+=("HARDENED_USERCOPY_FALLBACK");
 	optionsNo+=("SECURITY_SELINUX_DISABLE" "SECURITY_WRITABLE_HOOKS");
-	optionsNo+=("SLAB_MERGE_DEFAULT");
+	if [ "$DOS_USE_KSM" = false ]; then optionsNo+=("SLAB_MERGE_DEFAULT"); fi;
 	if [[ "$DOS_VERSION" != "LineageOS-20.0" ]]; then optionsNo+=("USERFAULTFD"); fi;
 	#optionsNo+=("CFI_PERMISSIVE");
 	#misc

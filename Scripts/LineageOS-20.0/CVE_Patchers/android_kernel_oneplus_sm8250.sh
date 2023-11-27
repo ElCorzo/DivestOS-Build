@@ -20,7 +20,6 @@ git apply $DOS_PATCHES_LINUX_CVES/0008-Graphene-Kernel_Hardening-ro/4.19/0013.pa
 git apply $DOS_PATCHES_LINUX_CVES/0008-Graphene-Kernel_Hardening-ro/4.19/0018.patch
 git apply $DOS_PATCHES_LINUX_CVES/0008-Graphene-Kernel_Hardening-ro/4.19/0021.patch
 git apply $DOS_PATCHES_LINUX_CVES/0008-Graphene-Kernel_Hardening-ro/4.19/0024.patch
-git apply $DOS_PATCHES_LINUX_CVES/0008-Graphene-Kernel_Hardening-ro/4.19/0035.patch
 git apply $DOS_PATCHES_LINUX_CVES/0008-Graphene-Kernel_Hardening-sanitize/4.19/0006.patch
 git apply $DOS_PATCHES_LINUX_CVES/0008-Graphene-Kernel_Hardening-sanitize/4.19/0010.patch
 git apply $DOS_PATCHES_LINUX_CVES/0008-Graphene-Kernel_Hardening-sanitize/4.19/0016.patch
@@ -29,7 +28,7 @@ git apply $DOS_PATCHES_LINUX_CVES/0008-Graphene-Kernel_Hardening-slab/4.19/0007.
 git apply $DOS_PATCHES_LINUX_CVES/0008-Graphene-Kernel_Hardening-slab/4.19/0011.patch
 git apply $DOS_PATCHES_LINUX_CVES/0008-Graphene-Kernel_Hardening-slab/4.19/0015.patch
 git apply $DOS_PATCHES_LINUX_CVES/0008-Graphene-Kernel_Hardening-slab/4.19/0019.patch
-git apply $DOS_PATCHES_LINUX_CVES/0009-rfc4941bis/4.19/0002.patch
+git apply $DOS_PATCHES_LINUX_CVES/0009-rfc4941bis/ANY/0005.patch
 git apply $DOS_PATCHES_LINUX_CVES/CVE-2015-7837/ANY/0001.patch
 git apply $DOS_PATCHES_LINUX_CVES/CVE-2016-3695/ANY/0001.patch
 #git apply $DOS_PATCHES_LINUX_CVES/CVE-2018-5873/ANY/0001.patch
@@ -73,20 +72,18 @@ git apply $DOS_PATCHES_LINUX_CVES/CVE-2022-20571/ANY/0001.patch
 git apply $DOS_PATCHES_LINUX_CVES/CVE-2022-27950/^5.16/0001.patch
 git apply $DOS_PATCHES_LINUX_CVES/CVE-2023-0030/^4.20/0001.patch
 git apply $DOS_PATCHES_LINUX_CVES/CVE-2023-0386/^6.2/0001.patch
-git apply $DOS_PATCHES_LINUX_CVES/CVE-2023-1380/4.19/0003.patch
-git apply $DOS_PATCHES_LINUX_CVES/CVE-2023-2002/3.10-^6.3/0001.patch
-git apply $DOS_PATCHES_LINUX_CVES/CVE-2023-2007/4.19/0002.patch
-git apply $DOS_PATCHES_LINUX_CVES/CVE-2023-2269/4.19/0003.patch
-git apply $DOS_PATCHES_LINUX_CVES/CVE-2023-3090/4.19/0004.patch
-git apply $DOS_PATCHES_LINUX_CVES/CVE-2023-3141/4.19/0004.patch
+git apply $DOS_PATCHES_LINUX_CVES/CVE-2023-1989/4.19/0004.patch
+git apply $DOS_PATCHES_LINUX_CVES/CVE-2023-3777/^6.5/0001.patch
+git apply $DOS_PATCHES_LINUX_CVES/CVE-2023-4133/^6.3/0001.patch
+git apply $DOS_PATCHES_LINUX_CVES/CVE-2023-4134/^6.3/0001.patch
+git apply $DOS_PATCHES_LINUX_CVES/CVE-2023-4194/^6.5/0001.patch
+git apply $DOS_PATCHES_LINUX_CVES/CVE-2023-4194/^6.5/0002.patch
+git apply $DOS_PATCHES_LINUX_CVES/CVE-2023-4623/4.12-^6.5/0001.patch
 git apply $DOS_PATCHES_LINUX_CVES/CVE-2023-23000/^5.16/0001.patch
-git apply $DOS_PATCHES_LINUX_CVES/CVE-2023-31084/4.19/0003.patch
-git apply $DOS_PATCHES_LINUX_CVES/CVE-2023-32233/4.19/0002.patch
-git apply $DOS_PATCHES_LINUX_CVES/CVE-2023-35788/4.19/0002.patch
-git apply $DOS_PATCHES_LINUX_CVES/CVE-2023-35823/4.19/0002.patch
-git apply $DOS_PATCHES_LINUX_CVES/CVE-2023-35824/4.19/0004.patch
-git apply $DOS_PATCHES_LINUX_CVES/CVE-2023-35828/4.19/0002.patch
-editKernelLocalversion "-dos.p86"
+git apply $DOS_PATCHES_LINUX_CVES/CVE-2023-28553/qca-wifi-host-cmn/0001.patch --directory=drivers/staging/qca-wifi-host-cmn
+git apply $DOS_PATCHES_LINUX_CVES/CVE-2023-31083/^6.5/0001.patch
+git apply $DOS_PATCHES_LINUX_CVES/CVE-2023-45863/4.19/0003.patch
+editKernelLocalversion "-dos.p83"
 else echo "kernel_oneplus_sm8250 is unavailable, not patching.";
 fi;
 cd "$DOS_BUILD_BASE"
